@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}整合案例：工廠設備異常通報助手{% endblock %}
+
+{% block content %}
+<!-- 案例標題 -->
+<div class="bg-gradient-to-r from-orange-500 to-rose-600 text-white py-6 px-4 -mx-4 -mt-6 mb-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-4">
+        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-xl font-black">🏭</div>
+        <div>
+            <div class="text-orange-200 text-xs mb-0.5">整合案例（A+B+C）</div>
+            <h1 class="text-2xl font-black">工廠設備異常通報助手</h1>
+            <p class="text-orange-100 text-sm">把所學全部串起來，設計一個完整的 AI 方案</p>
+        </div>
+        <div class="ml-auto hidden md:block text-right">
+            <div class="text-xs text-orange-200">整合練習</div>
+            <div class="text-sm font-bold">4 步驟完整設計</div>
+        </div>
+    </div>
+</div>
+
+<!-- 情境說明卡 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+        <h2 class="font-bold text-amber-900 mb-3 flex items-center gap-2">
+            <i class="fas fa-industry text-amber-600"></i>情境說明
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-amber-800">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>工廠多台設備產生<strong>異常短訊息（繁體中文）</strong></span>
+            </div>
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>班長需快速看懂<strong>異常重點 + 嚴重程度</strong></span>
+            </div>
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>資料含<strong>內部製程資訊</strong>（敏感性中～高）</span>
+            </div>
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>輸出需<strong>JSON 格式</strong>供看板 / MES 串接</span>
+            </div>
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>每天約 <strong>300 次</strong>查詢（可調整）</span>
+            </div>
+            <div class="flex items-start gap-2">
+                <i class="fas fa-circle-check text-amber-500 mt-0.5 text-xs"></i>
+                <span>部分場域<strong>網路不穩定</strong>（需考慮 offline）</span>
+            </div>
+        </div>
+        <!-- 工廠異常資料預覽 -->
+        <div class="mt-4 bg-gray-900 rounded-xl p-3 text-xs font-mono text-gray-300 overflow-x-auto">
+            <div class="text-green-400 mb-1">// 今日工廠異常資料樣本（前3筆）</div>
+            <div id="anomaly-preview"><!-- JS 渲染 --></div>
+        </div>
+    </div>
+</div>
+
+<!-- 步驟進度條 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="flex items-center gap-2">
+        {% for i, label in [(1,'Prompt 設計'),(2,'模型選型'),(3,'部署方案'),(4,'總結提案')] %}
+        <button onclick="showStep({{ i }})" id="step-btn-{{ i }}"
+            class="step-btn flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs transition
+                   {% if active_step == i %}bg-orange-500 text-white shadow-lg{% else %}bg-white border border-gray-200 text-gray-500 hover:border-orange-300{% endif %}">
+            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-sm
+                        {% if active_step == i %}border-white text-white{% else %}border-gray-300 text-gray-400{% endif %}">
+                {{ i }}
+            </div>
+            <span>{{ label }}</span>
+        </button>
+        {% if not loop.last %}
+        <div class="text-gray-300 text-sm"><i class="fas fa-chevron-right"></i></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto">
+
+<!-- ============================================================
+     步驟 1：設計 Prompt（含角色分層）
+     ============================================================ -->
+<div id="step-1" class="step-content {% if active_step != 1 %}hidden{% endif %}">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-700 flex items-center gap-2">
+        <span class="text-lg">🎯</span>
+        <div><strong>步驟1 任務：</strong>為「設備異常通報助手」設計完整的 Prompt（含五要素 + 角色分層結構）</div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="space-y-4">
+            <h3 class="font-bold text-gray-800">Prompt 五要素設計</h3>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    目標 Goal <span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（這個系統要幫誰做什麼？）</span>
+                </label>
+                <textarea id="case-goal" rows="2" placeholder="例如：協助工廠班長快速理解設備異常，判斷嚴重程度..."
+                    class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    資料/欄位定義 Context <span class="text-red-400">*</span>
+                </label>
+                <textarea id="case-context" rows="3" placeholder="定義輸入資料格式：機台ID、時間、班別、異常訊息、最近維修紀錄..."
+                    class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    規則 Constraints <span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（不可捏造 / 資料不足處理 / 字數限制）</span>
+                </label>
+                <textarea id="case-constraints" rows="2" placeholder="例如：若資料不足請回覆「資料不足」，不可猜測，嚴重程度只能是高/中/低..."
+                    class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    輸出格式 Output Format <span class="text-red-400">*</span>
+                </label>
+                <textarea id="case-format" rows="3" placeholder='{"summary": "...", "severity": "高/中/低", "possible_causes": [], "action": "..."}'
+                    class="w-full border rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">評估標準 Evaluation</label>
+                <textarea id="case-evaluation" rows="2" placeholder="好的回應標準：格式正確、摘要精準在50字內、原因具體可操作..."
+                    class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <h3 class="font-bold text-gray-800">角色分層設計（A-1.5 應用）</h3>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 mb-2">
+                <i class="fas fa-lightbulb mr-1"></i>把上方五要素拆分到三個角色中，讓 Prompt 結構更穩定
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-blue-700 mb-1 block flex items-center gap-1">
+                    <i class="fas fa-shield-halved"></i> System Prompt <span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（固定規則/SOP）</span>
+                </label>
+                <textarea id="case-system" rows="4"
+                    placeholder="把不變的規則、角色設定、格式規範放在這裡&#10;例如：&#10;你是工廠值班助理，回覆使用繁體中文。&#10;輸出必須是 JSON 格式。&#10;若資料不足，請回覆「資料不足」，不可捏造。"
+                    class="w-full border border-blue-200 rounded-xl px-3 py-2 text-sm font-mono bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-green-700 mb-1 block flex items-center gap-1">
+                    <i class="fas fa-user"></i> User Prompt <span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（本次任務+輸入資料）</span>
+                </label>
+                <textarea id="case-user" rows="3"
+                    placeholder="把本次任務描述和輸入資料放在這裡&#10;例如：&#10;請分析以下設備異常訊息：&#10;機台ID: {machine_id}；訊息: {anomaly_message}"
+                    class="w-full border border-green-200 rounded-xl px-3 py-2 text-sm font-mono bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"></textarea>
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-purple-700 mb-1 block flex items-center gap-1">
+                    <i class="fas fa-robot"></i> Assistant Message（可選）
+                    <span class="text-gray-400 font-normal">（示範 / few-shot 範例）</span>
+                </label>
+                <textarea id="case-assistant" rows="3"
+                    placeholder='可提供示範輸出，讓模型知道格式要長這樣：&#10;{"summary": "WE-27 收線張力波動", "severity": "高", "possible_causes": ["感測器異常"], "action": "暫停生產"}'
+                    class="w-full border border-purple-200 rounded-xl px-3 py-2 text-sm font-mono bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+        <button onclick="submitCaseStep(1)" class="bg-orange-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-orange-600 transition flex items-center gap-2">
+            <i class="fas fa-paper-plane"></i>提交 Prompt 設計
+        </button>
+        <button onclick="loadCaseExample(1)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            載入範例
+        </button>
+    </div>
+    <div id="step-1-result" class="hidden mt-4 p-5 rounded-2xl border"></div>
+</div>
+
+<!-- ============================================================
+     步驟 2：選模型（B）
+     ============================================================ -->
+<div id="step-2" class="step-content {% if active_step != 2 %}hidden{% endif %}">
+    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4 text-sm text-purple-700 flex items-center gap-2">
+        <span class="text-lg">🔍</span>
+        <div><strong>步驟2 任務：</strong>從三個候選模型中選出最適合的，並用 Model Card 的依據支持你的選擇</div>
+    </div>
+
+    <!-- 快速模型比較 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="case-model-cards">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">你選擇的模型 <span class="text-red-400">*</span></label>
+            <div class="flex gap-3 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="case-model" value="MODEL_A" class="accent-purple-500">
+                    <span class="text-sm">模型 A (TW-LLM-Chat-7B)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="case-model" value="MODEL_B" class="accent-purple-500">
+                    <span class="text-sm">模型 B (IndustrialGPT-32B)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="case-model" value="MODEL_C" class="accent-purple-500">
+                    <span class="text-sm">模型 C (FastChat-Lite-3B)</span>
+                </label>
+            </div>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">
+                Model Card 中哪些資訊支持你的選擇？<span class="text-red-400">*</span>
+            </label>
+            <textarea id="case-model-reason" rows="3" placeholder="引用 Model Card 的具體欄位，例如：License=MIT 無商用限制、Languages 包含繁中、部署需求符合 RTX 3090..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">風險與限制</label>
+            <textarea id="case-model-risks" rows="2" placeholder="這個模型有什麼已知問題或限制？如何應對？"
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">限制說明</label>
+            <textarea id="case-model-limitations" rows="2" placeholder="有哪些功能或場景是這個模型做不到的？"
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+        </div>
+    </div>
+
+    <div class="flex gap-3 mt-4">
+        <button onclick="submitCaseStep(2)" class="bg-orange-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-orange-600 transition flex items-center gap-2">
+            <i class="fas fa-check"></i>確認模型選型
+        </button>
+        <button onclick="loadCaseExample(2)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            載入範例
+        </button>
+        <button onclick="showStep(1)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            ← 上一步
+        </button>
+    </div>
+    <div id="step-2-result" class="hidden mt-4 p-5 rounded-2xl border"></div>
+</div>
+
+<!-- ============================================================
+     步驟 3：選部署方案（C）
+     ============================================================ -->
+<div id="step-3" class="step-content {% if active_step != 3 %}hidden{% endif %}">
+    <div class="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 text-sm text-green-700 flex items-center gap-2">
+        <span class="text-lg">🏗️</span>
+        <div><strong>步驟3 任務：</strong>根據情境條件，選擇部署方案並說明理由與成本規劃</div>
+    </div>
+
+    <!-- 情境條件提示 -->
+    <div class="bg-gray-50 rounded-xl p-4 mb-4 text-sm text-gray-600">
+        <div class="font-medium mb-2">本案例的關鍵條件：</div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div>🔒 資料敏感度：<strong class="text-orange-600">中～高</strong></div>
+            <div>⚡ 延遲需求：<strong>分鐘級</strong></div>
+            <div>📊 每日查詢：<strong>~300 次</strong></div>
+            <div>📡 網路：<strong class="text-red-600">部分場域不穩</strong></div>
+            <div>💰 預算：<strong>中等</strong></div>
+            <div>🔧 維運：<strong>視你的答案而定</strong></div>
+        </div>
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">你的部署方案選擇 <span class="text-red-400">*</span></label>
+            <div class="grid grid-cols-3 gap-3">
+                <label class="cursor-pointer"><input type="radio" name="case-deploy" value="雲端" class="sr-only peer">
+                    <div class="text-center py-3 rounded-xl border-2 text-sm transition peer-checked:border-blue-400 peer-checked:bg-blue-50 peer-checked:text-blue-600 border-gray-200 text-gray-500 hover:border-gray-300">
+                        ☁️ 純雲端
+                    </div>
+                </label>
+                <label class="cursor-pointer"><input type="radio" name="case-deploy" value="混合" class="sr-only peer">
+                    <div class="text-center py-3 rounded-xl border-2 text-sm transition peer-checked:border-purple-400 peer-checked:bg-purple-50 peer-checked:text-purple-600 border-gray-200 text-gray-500 hover:border-gray-300">
+                        🔀 混合
+                    </div>
+                </label>
+                <label class="cursor-pointer"><input type="radio" name="case-deploy" value="地端" class="sr-only peer">
+                    <div class="text-center py-3 rounded-xl border-2 text-sm transition peer-checked:border-green-400 peer-checked:bg-green-50 peer-checked:text-green-600 border-gray-200 text-gray-500 hover:border-gray-300">
+                        🏭 純地端
+                    </div>
+                </label>
+            </div>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">成本分析說明</label>
+            <textarea id="case-cost" rows="2" placeholder="預估月成本區間，CapEx vs OpEx 分析..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">風險說明</label>
+            <textarea id="case-risk-explain" rows="2" placeholder="這個方案的主要風險是什麼？如何緩解？"
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">
+                PoC → 試營運 → 正式上線規劃 <span class="text-red-400">*</span>
+            </label>
+            <textarea id="case-poc" rows="3" placeholder="請描述三階段導入計畫：&#10;PoC：先做什麼驗證？如何評估可行性？&#10;試營運：小規模上線的範圍和時間？&#10;正式：什麼條件下才全面上線？"
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"></textarea>
+        </div>
+    </div>
+
+    <div class="flex gap-3 mt-4">
+        <button onclick="submitCaseStep(3)" class="bg-orange-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-orange-600 transition flex items-center gap-2">
+            <i class="fas fa-check"></i>確認部署方案
+        </button>
+        <button onclick="loadCaseExample(3)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            載入範例
+        </button>
+        <button onclick="showStep(2)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            ← 上一步
+        </button>
+    </div>
+    <div id="step-3-result" class="hidden mt-4 p-5 rounded-2xl border"></div>
+</div>
+
+<!-- ============================================================
+     步驟 4：總結提案輸出
+     ============================================================ -->
+<div id="step-4" class="step-content {% if active_step != 4 %}hidden{% endif %}">
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4 text-sm text-orange-700 flex items-center gap-2">
+        <span class="text-lg">🏆</span>
+        <div><strong>步驟4 任務：</strong>整合三個步驟的決策，產出完整的「方案設計摘要」</div>
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-5">
+        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-file-alt text-orange-500"></i>工廠 AI 方案設計摘要
+        </h3>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">Prompt 設計摘要 <span class="text-red-400">*</span></label>
+            <textarea id="summary-prompt" rows="3" placeholder="用 2-3 句話總結你的 Prompt 設計重點：包含什麼五要素、如何做角色分層..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">模型選型理由 <span class="text-red-400">*</span></label>
+            <textarea id="summary-model" rows="3" placeholder="總結選型決策：選了哪個模型、主要理由、關鍵 Model Card 依據..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">部署方案理由 <span class="text-red-400">*</span></label>
+            <textarea id="summary-deploy" rows="3" placeholder="總結部署決策：選了哪個方案、理由、成本考量、三階段規劃..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"></textarea>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">你避開了哪些常見誤區？</label>
+            <div id="mistakes-checkboxes" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <!-- 由 JS 渲染誤區清單 -->
+            </div>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">下一步驗證計畫</label>
+            <textarea id="summary-validation" rows="3" placeholder="完成方案設計後，接下來如何驗證這個方案是否可行？&#10;例如：準備測試集、設定準確率門檻、進行 PoC 試跑..."
+                class="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"></textarea>
+        </div>
+    </div>
+
+    <div class="flex gap-3 mt-4">
+        <button onclick="submitCaseStep(4)" class="bg-orange-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-orange-600 transition flex items-center gap-2">
+            <i class="fas fa-trophy"></i>完成整合提案
+        </button>
+        <button onclick="loadCaseExample(4)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            載入範例
+        </button>
+        <button onclick="showStep(3)" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+            ← 上一步
+        </button>
+    </div>
+    <div id="step-4-result" class="hidden mt-4 p-5 rounded-2xl border"></div>
+
+    <!-- 完成卡 (在提交後顯示) -->
+    <div id="final-score-card" class="hidden mt-6 bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-2xl p-6 text-center">
+        <div class="text-5xl mb-3">🏆</div>
+        <div class="text-xl font-black mb-2">整合案例完成！</div>
+        <div class="text-sm mb-5 text-orange-100">你已完成工廠設備異常通報助手的完整方案設計</div>
+        <a href="/case/certificate" class="inline-flex items-center gap-2 bg-white text-orange-600 px-6 py-3 rounded-xl font-bold hover:bg-orange-50 transition">
+            <i class="fas fa-certificate"></i>領取完成證書！
+        </a>
+    </div>
+</div>
+
+</div><!-- end max-w-6xl -->
+
+<!-- 資料傳遞 -->
+<script>
+var ANOMALIES_DATA = {{ anomalies|safe }};
+var MODELS_DATA = {{ models|safe }};
+var SUBMISSIONS_DATA = {{ submissions|safe }};
+var ACTIVE_STEP = {{ active_step }};
+</script>
+<script src="{{ url_for('static', filename='js/case.js') }}"></script>
+{% endblock %}

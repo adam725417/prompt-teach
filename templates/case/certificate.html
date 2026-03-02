@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}完成證書 - 工廠 AI 方案設計師{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8">
+    <!-- 列印/下載按鈕 -->
+    <div class="flex justify-end gap-2 mb-4 print:hidden">
+        <button onclick="window.print()" class="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm hover:bg-gray-200 transition">
+            <i class="fas fa-print"></i>列印證書
+        </button>
+        <a href="/case" class="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-xl text-sm hover:bg-orange-600 transition">
+            <i class="fas fa-arrow-left"></i>返回案例
+        </a>
+    </div>
+
+    <!-- 證書主體 -->
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-orange-200" id="certificate-body">
+        <!-- 頂部裝飾 -->
+        <div class="bg-gradient-to-r from-orange-500 via-rose-500 to-purple-600 h-4"></div>
+
+        <div class="p-8 md:p-12">
+            <!-- 標題 -->
+            <div class="text-center mb-8">
+                <div class="text-4xl mb-3">🏭</div>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-900 mb-2">完成證書</h1>
+                <p class="text-gray-500 text-sm">生成式 AI 實務決策流程教學平台</p>
+            </div>
+
+            <!-- 頒發內容 -->
+            <div class="text-center mb-8 bg-gradient-to-br from-orange-50 to-purple-50 rounded-2xl p-6">
+                <p class="text-gray-600 text-sm mb-2">茲證明</p>
+                <h2 class="text-3xl font-black text-gray-900 mb-2">{{ user_name }}</h2>
+                <p class="text-gray-600 text-sm mb-4">已完成以下學習內容並通過整合案例評量</p>
+                <div class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-purple-600">
+                    🎓 工廠 AI 方案設計師
+                </div>
+            </div>
+
+            <!-- 分數顯示 -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-4 bg-gray-50 rounded-2xl px-8 py-4">
+                    <div class="text-center">
+                        <div class="text-4xl font-black
+                            {% if avg_score >= 85 %}text-orange-500
+                            {% elif avg_score >= 70 %}text-blue-500
+                            {% else %}text-gray-500{% endif %}">
+                            {{ avg_score }}
+                        </div>
+                        <div class="text-xs text-gray-500">/ 100 分</div>
+                    </div>
+                    <div class="text-left">
+                        <div class="font-bold text-gray-800 text-sm">
+                            {% if avg_score >= 85 %}🏆 優秀
+                            {% elif avg_score >= 70 %}👍 良好
+                            {% elif avg_score >= 55 %}📝 及格
+                            {% else %}💪 繼續加油{% endif %}
+                        </div>
+                        <div class="text-xs text-gray-400">整合案例平均得分</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 徽章區 -->
+            <div class="mb-8">
+                <h3 class="text-center text-sm text-gray-500 mb-4 font-medium">獲得的徽章</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {% for badge in badges %}
+                    <div class="text-center p-3 rounded-2xl {% if badge.earned %}bg-{{ badge.color }}-50 border border-{{ badge.color }}-200{% else %}bg-gray-50 border border-gray-200 opacity-40{% endif %}">
+                        <div class="text-2xl mb-1">
+                            {% if badge.name == 'Prompt 設計師' %}🎨
+                            {% elif badge.name == 'Model Card 偵探' %}🔍
+                            {% elif badge.name == '部署架構師' %}🏗️
+                            {% else %}🏭{% endif %}
+                        </div>
+                        <div class="text-xs font-bold
+                            {% if badge.earned %}text-{{ badge.color }}-700{% else %}text-gray-400{% endif %}">
+                            {{ badge.name }}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ badge.desc }}</div>
+                        {% if badge.earned %}
+                        <div class="text-xs text-green-500 mt-1"><i class="fas fa-check-circle"></i> 已獲得</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 學習成就 -->
+            <div class="bg-gray-50 rounded-2xl p-5 mb-8">
+                <h3 class="font-bold text-gray-700 text-sm mb-3">課程完成內容</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        掌握 Prompt 五要素設計方法
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        理解 System/User/Assistant 角色結構
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        能從 Model Card 做工程選型決策
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        了解雲端/混合/地端部署的取捨
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        完成工廠 AI 方案完整設計
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check text-green-500"></i>
+                        識別並避開常見 AI 導入誤區
+                    </div>
+                </div>
+            </div>
+
+            <!-- 頒發資訊 -->
+            <div class="flex items-center justify-between text-xs text-gray-400 border-t border-gray-100 pt-4">
+                <div>
+                    <div class="font-medium text-gray-600">交通大學工業工程系碩士班</div>
+                    <div>生成式 AI 實務決策流程課程</div>
+                </div>
+                <div class="text-right">
+                    <div>頒發日期</div>
+                    <div class="font-medium text-gray-600">{{ date }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部裝飾 -->
+        <div class="bg-gradient-to-r from-purple-600 via-rose-500 to-orange-500 h-4"></div>
+    </div>
+
+    <!-- 鼓勵訊息 -->
+    <div class="mt-6 text-center text-gray-500 text-sm">
+        <p>🎉 恭喜完成課程！你已經建立了 AI 工程決策的完整思維框架。</p>
+        <p class="mt-1">記住：<strong class="text-gray-700">Prompt 是設計，模型是工具，部署是工程</strong>——三者缺一不可。</p>
+    </div>
+</div>
+
+<style>
+@media print {
+    body { background: white; }
+    nav, footer, .print\:hidden { display: none !important; }
+    main { padding: 0; max-width: 100%; }
+    #certificate-body { box-shadow: none; border: 2px solid #f97316; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI 教學平台{% endblock %} | 生成式 AI 實務決策流程</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'unit-a': '#3B82F6',
+                        'unit-b': '#8B5CF6',
+                        'unit-c': '#10B981',
+                        'unit-case': '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- 頂部導覽列 -->
+<nav class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-2 hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-sm hidden sm:block">生成式 AI 實務決策</span>
+                <span class="font-bold text-sm sm:hidden">AI 教學</span>
+            </a>
+
+            <!-- 單元導覽 -->
+            <div class="flex items-center gap-1 text-xs">
+                <a href="/unit-a" class="nav-unit px-2 py-1 rounded-md hover:bg-blue-600 transition flex items-center gap-1
+                    {% if request.path.startswith('/unit-a') %}bg-blue-600{% endif %}">
+                    <span class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center text-xs font-bold">A</span>
+                    <span class="hidden md:inline">Prompt</span>
+                </a>
+                <a href="/unit-b" class="nav-unit px-2 py-1 rounded-md hover:bg-purple-600 transition flex items-center gap-1
+                    {% if request.path.startswith('/unit-b') %}bg-purple-600{% endif %}">
+                    <span class="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs font-bold">B</span>
+                    <span class="hidden md:inline">模型選型</span>
+                </a>
+                <a href="/unit-c" class="nav-unit px-2 py-1 rounded-md hover:bg-green-600 transition flex items-center gap-1
+                    {% if request.path.startswith('/unit-c') %}bg-green-600{% endif %}">
+                    <span class="w-4 h-4 bg-green-500 rounded text-white flex items-center justify-center text-xs font-bold">C</span>
+                    <span class="hidden md:inline">部署選型</span>
+                </a>
+            </div>
+
+            <!-- 右側工具 -->
+            <div class="flex items-center gap-2">
+                <!-- 模式切換 -->
+                <div id="mode-toggle" class="flex items-center gap-1 text-xs cursor-pointer" title="切換教學模式">
+                    <span id="mode-icon" class="text-yellow-400"><i class="fas fa-graduation-cap"></i></span>
+                    <span id="mode-label" class="hidden sm:inline text-gray-300">教學模式</span>
+                </div>
+                <!-- 學生姓名 -->
+                <button onclick="showNameModal()" class="text-gray-400 hover:text-white transition text-xs flex items-center gap-1">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="nav-username" class="hidden sm:inline">{{ user_name if user_name else '設定姓名' }}</span>
+                </button>
+                <!-- 教師模式 -->
+                <a href="/teacher" class="text-gray-500 hover:text-gray-300 transition text-xs" title="教師面板">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 進度條（頂部細線）-->
+<div class="h-1 bg-gray-200">
+    <div id="global-progress-bar" class="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 transition-all duration-500"
+         style="width: 0%"></div>
+</div>
+
+<!-- 主內容 -->
+<main class="{% block main_class %}max-w-7xl mx-auto px-4 py-6{% endblock %}">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- 底部 -->
+<footer class="bg-gray-900 text-gray-500 text-center py-4 mt-12 text-xs">
+    <p>🎓生成式 AI 實務決策流程教學平台</p>
+</footer>
+
+<!-- 姓名設定 Modal -->
+<div id="name-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-user-edit text-blue-500 mr-2"></i>設定你的名稱
+        </h3>
+        <input type="text" id="name-input" placeholder="輸入你的姓名或學號"
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4">
+        <div class="flex gap-2">
+            <button onclick="saveName()" class="flex-1 bg-blue-500 text-white rounded-lg py-2 text-sm hover:bg-blue-600 transition">
+                確定
+            </button>
+            <button onclick="hideNameModal()" class="flex-1 bg-gray-100 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-200 transition">
+                取消
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示 Toast -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm hidden z-50 max-w-xs">
+    <div class="flex items-center gap-2">
+        <span id="toast-icon">✅</span>
+        <span id="toast-msg">操作成功</span>
+    </div>
+</div>
+
+<!-- Main JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% block extra_scripts %}{% endblock %}
+
+<script>
+// 初始化全域進度條
+$(document).ready(function() {
+    $.get('/api/progress', function(data) {
+        var completed = data.badges.filter(b => b.earned).length;
+        var pct = Math.min(completed / 4 * 100, 100);
+        $('#global-progress-bar').css('width', pct + '%');
+    });
+
+    // 初始化模式標籤
+    var mode = '{{ mode if mode else "guided" }}';
+    updateModeUI(mode);
+});
+
+function showNameModal() {
+    var current = $('#nav-username').text();
+    $('#name-input').val(current !== '設定姓名' ? current : '');
+    $('#name-modal').removeClass('hidden');
+    setTimeout(() => $('#name-input').focus(), 100);
+}
+function hideNameModal() { $('#name-modal').addClass('hidden'); }
+function saveName() {
+    var name = $('#name-input').val().trim();
+    if (!name) return;
+    $.ajax({ url: '/set-name', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({name: name}),
+        success: function() {
+            $('#nav-username').text(name);
+            hideNameModal();
+            showToast('✅', '姓名已更新：' + name);
+        }
+    });
+}
+
+function updateModeUI(mode) {
+    if (mode === 'challenge') {
+        $('#mode-icon').html('<i class="fas fa-bolt text-yellow-400"></i>');
+        $('#mode-label').text('挑戰模式');
+        $('.hint-box').addClass('hidden');
+    } else {
+        $('#mode-icon').html('<i class="fas fa-graduation-cap text-blue-400"></i>');
+        $('#mode-label').text('教學模式');
+        $('.hint-box').removeClass('hidden');
+    }
+}
+
+$('#mode-toggle').click(function() {
+    var current = $(this).data('mode') || '{{ mode if mode else "guided" }}';
+    var next = current === 'guided' ? 'challenge' : 'guided';
+    $(this).data('mode', next);
+    $.ajax({ url: '/set-mode', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({mode: next}),
+        success: function() {
+            updateModeUI(next);
+            showToast('🔄', next === 'challenge' ? '已切換至挑戰模式（提示已隱藏）' : '已切換至教學模式');
+        }
+    });
+});
+</script>
+
+</body>
+</html>

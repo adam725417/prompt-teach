@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}單元 B：Hugging Face 模型挑選與 Model Card{% endblock %}
+
+{% block content %}
+<!-- 單元標題 -->
+<div class="bg-gradient-to-r from-purple-600 to-purple-900 text-white py-6 px-4 -mx-4 -mt-6 mb-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-4">
+        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-2xl font-black">B</div>
+        <div>
+            <div class="text-purple-200 text-xs mb-0.5">單元 B</div>
+            <h1 class="text-2xl font-black">模型挑選與 Model Card</h1>
+            <p class="text-purple-200 text-sm">「模型很強，不代表適合你的場景」</p>
+        </div>
+        <div class="ml-auto hidden md:block">
+            <div class="text-xs text-purple-200">包含</div>
+            <div class="text-sm font-bold">5 個模組 · 5 題測驗 · 模型 PK 活動</div>
+        </div>
+    </div>
+</div>
+
+<!-- 分頁導覽 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="flex flex-wrap gap-2 bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+        {% set tabs = [
+            ('b1', 'fas fa-diagram-project', '選型流程'),
+            ('b2', 'fas fa-file-magnifying-glass', 'Model Card'),
+            ('b3', 'fas fa-trophy', '模型 PK'),
+            ('b4', 'fas fa-triangle-exclamation', '常見誤區'),
+            ('b5', 'fas fa-clipboard-question', '小測驗'),
+        ] %}
+        {% for tab_id, icon, label in tabs %}
+        <button onclick="showTabB('{{ tab_id }}')"
+            id="tab-btn-{{ tab_id }}"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   {% if active_tab == tab_id %}bg-purple-500 text-white shadow{% else %}text-gray-500 hover:bg-gray-100{% endif %}">
+            <i class="{{ icon }} text-xs"></i>{{ label }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto space-y-4">
+
+<!-- ============================================================
+     B-1: 選型流程圖
+     ============================================================ -->
+<div id="tab-b1" class="tab-b-content {% if active_tab != 'b1' %}hidden{% endif %}">
+
+    <div class="hint-box bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4 text-sm text-purple-700 flex items-start gap-2">
+        <i class="fas fa-circle-info mt-0.5"></i>
+        <div><strong>教學提示：</strong>點擊每個步驟，查看說明、工廠場景範例和常見誤判！6 個步驟依序完成，不要跳步。</div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">模型選型六步驟</h2>
+    <p class="text-gray-500 text-sm mb-6">選模型不是選「最強的」，而是選「最適合你場景的」</p>
+
+    <!-- 六步驟互動流程 -->
+    <div id="selection-steps" class="space-y-3">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <button onclick="showTabB('b2')" class="mt-6 bg-purple-500 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-600 transition flex items-center gap-2">
+        下一步：Model Card 解剖台 <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
+
+<!-- ============================================================
+     B-2: Model Card 解剖台
+     ============================================================ -->
+<div id="tab-b2" class="tab-b-content {% if active_tab != 'b2' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Model Card 解剖台</h2>
+    <p class="text-gray-500 text-sm mb-4">點擊 Model Card 的每個段落，標記你認為它屬於哪個類別。看看你能不能找對重點！</p>
+
+    <!-- 模型選擇器 -->
+    <div class="flex gap-2 mb-4 flex-wrap" id="model-selector">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- 左：Model Card 文件閱讀器 -->
+        <div class="lg:col-span-2">
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                <div class="bg-gray-800 text-white px-4 py-3 flex items-center gap-2">
+                    <i class="fab fa-python text-yellow-400"></i>
+                    <span class="text-sm font-mono" id="model-card-title">選擇一個模型</span>
+                    <span class="ml-auto text-xs text-gray-400">Hugging Face Model Card（模擬）</span>
+                </div>
+                <div id="model-card-content" class="p-4 space-y-3 max-h-96 overflow-y-auto">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-file-alt text-3xl mb-2"></i>
+                        <p class="text-sm">點擊上方選擇模型查看 Model Card</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右：標記類別 -->
+        <div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm mb-4">
+                <h3 class="text-sm font-bold text-gray-700 mb-3">標記類別（點擊段落後選擇）</h3>
+                <div class="space-y-2" id="label-buttons">
+                    <!-- 由 JS 渲染 -->
+                </div>
+            </div>
+            <div id="labeling-feedback" class="bg-purple-50 border border-purple-100 rounded-2xl p-4 hidden">
+                <h3 class="text-sm font-bold text-purple-700 mb-2">✨ 標記回饋</h3>
+                <div id="labeling-feedback-content" class="text-xs text-purple-600 space-y-1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     B-3: 模型 PK
+     ============================================================ -->
+<div id="tab-b3" class="tab-b-content {% if active_tab != 'b3' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">模型選型 PK 活動</h2>
+    <p class="text-gray-500 text-sm mb-4">任務情境固定，三個候選模型，你會選哪個？說出你的理由！</p>
+
+    <!-- 任務情境 -->
+    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center text-white text-sm">
+                <i class="fas fa-factory"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-orange-800 mb-1">任務情境：設備異常通報摘要系統</h3>
+                <div class="text-sm text-orange-700 space-y-1">
+                    <p>• 工廠設備異常訊息（繁體中文）→ 摘要 + 分類 + 嚴重程度</p>
+                    <p>• 輸出格式：<code class="bg-orange-100 px-1 rounded">JSON</code>（供 MES 系統串接）</p>
+                    <p>• 商業用途（對外提供服務）</p>
+                    <p>• GPU 預算有限（RTX 3090 x1 以內）</p>
+                    <p>• 每日約 300 次查詢</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三個候選模型卡 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="pk-model-cards">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 選型表單 -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-pen-to-square text-purple-500"></i>提交你的選型決策
+        </h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-2 block">你選擇的模型 *</label>
+                <div class="flex gap-3" id="pk-model-choice">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_A" class="accent-purple-500">
+                        <span class="text-sm">模型 A (Breeze-7B)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_B" class="accent-purple-500">
+                        <span class="text-sm">模型 B (Qwen2.5-14B)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_C" class="accent-purple-500">
+                        <span class="text-sm">模型 C (Phi-3-mini)</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    為何選它？<span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（從 Model Card 找依據）</span>
+                </label>
+                <textarea id="reason-selected" rows="3" placeholder="例如：授權為 MIT、支援繁中、7B 可量化後在 RTX 3090 上運行..."
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    不選另外兩個的原因？
+                </label>
+                <textarea id="reason-rejected" rows="2" placeholder="例如：Model A 非商用授權有風險；Model B 硬體需求超出預算..."
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">風險評估</label>
+                <textarea id="risk-assessment" rows="2" placeholder="你選的模型有什麼已知限制或風險？"
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">下一步驗證方式</label>
+                <textarea id="next-steps" rows="2" placeholder="打算如何驗證這個選擇是正確的？（例如：小樣本測試、準確率門檻...）"
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <button onclick="submitModelPK()" class="bg-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-600 transition flex items-center gap-2">
+                <i class="fas fa-paper-plane"></i>提交選型決策
+            </button>
+        </div>
+    </div>
+    <div id="pk-feedback" class="hidden mt-4 p-5 rounded-2xl border"></div>
+</div>
+
+<!-- ============================================================
+     B-4: 常見誤區
+     ============================================================ -->
+<div id="tab-b4" class="tab-b-content {% if active_tab != 'b4' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">常見誤區提醒</h2>
+    <p class="text-gray-500 text-sm mb-6">選型時最容易犯的 5 個錯誤，每一個都是真實代價！</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mistakes-grid-b">
+        <!-- 由 JS 渲染 -->
+    </div>
+</div>
+
+<!-- ============================================================
+     B-5: 小測驗
+     ============================================================ -->
+<div id="tab-b5" class="tab-b-content {% if active_tab != 'b5' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">單元 B 小測驗</h2>
+    <p class="text-gray-500 text-sm mb-6">5 道題，測驗你的模型選型決策能力</p>
+
+    <div id="quiz-container-b" class="space-y-6">
+        <!-- 由 JS 渲染 -->
+    </div>
+    <button id="quiz-submit-b" onclick="submitQuizB()" class="hidden mt-6 bg-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-600 transition flex items-center gap-2">
+        <i class="fas fa-paper-plane"></i>提交測驗
+    </button>
+    <div id="quiz-result-b" class="hidden mt-4 p-5 rounded-2xl"></div>
+</div>
+
+</div>
+
+<!-- 資料傳遞 -->
+<script>
+var MODELS_DATA = {{ models|safe }};
+var B_QUIZZES_DATA = {{ b_quizzes|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/unit_b.js') }}"></script>
+{% endblock %}

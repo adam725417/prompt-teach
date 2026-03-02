@@ -1,0 +1,255 @@
+/* ============================================================
+   custom.css - 自訂樣式
+   AI 教學平台 - 生成式 AI 實務決策流程
+   ============================================================ */
+
+/* 字型 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+}
+
+/* ---- 基礎動畫 ---- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-soft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+@keyframes bounce-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+.slide-in { animation: slideInRight 0.3s ease-out; }
+
+/* ---- 卡片通用 ---- */
+.card-hover {
+    transition: all 0.2s ease;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+/* ---- 拖拉元素 ---- */
+.draggable {
+    cursor: grab;
+    user-select: none;
+    transition: all 0.15s ease;
+}
+.draggable:active { cursor: grabbing; }
+.draggable.dragging {
+    opacity: 0.5;
+    transform: scale(1.05);
+}
+.draggable.selected {
+    ring: 2px;
+    box-shadow: 0 0 0 2px #3B82F6;
+}
+
+/* 拖拉放置區 */
+.drop-zone {
+    transition: all 0.2s ease;
+    min-height: 6rem;
+}
+.drop-zone.drag-over {
+    border-color: #3B82F6 !important;
+    background-color: rgba(59, 130, 246, 0.05) !important;
+    transform: scale(1.01);
+}
+.drop-zone.correct-zone {
+    border-color: #10B981 !important;
+    background-color: rgba(16, 185, 129, 0.05) !important;
+}
+.drop-zone.wrong-zone {
+    border-color: #EF4444 !important;
+    background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* ---- 進度相關 ---- */
+.progress-ring {
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+/* ---- 測驗題目 ---- */
+.quiz-option {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 2px solid transparent;
+}
+.quiz-option:hover {
+    border-color: #93C5FD;
+    background-color: #EFF6FF;
+}
+.quiz-option.selected {
+    border-color: #3B82F6;
+    background-color: #EFF6FF;
+    color: #1D4ED8;
+}
+.quiz-option.correct {
+    border-color: #10B981 !important;
+    background-color: #ECFDF5 !important;
+    color: #065F46 !important;
+}
+.quiz-option.incorrect {
+    border-color: #EF4444 !important;
+    background-color: #FEF2F2 !important;
+    color: #991B1B !important;
+}
+
+/* ---- 誤區卡片 ---- */
+.mistake-card {
+    border-left: 4px solid #F59E0B;
+    transition: all 0.2s ease;
+}
+.mistake-card:hover {
+    transform: translateX(4px);
+    border-left-color: #D97706;
+}
+
+/* ---- 徽章 ---- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.badge-blue { background: #EFF6FF; color: #1D4ED8; }
+.badge-purple { background: #F5F3FF; color: #6D28D9; }
+.badge-green { background: #ECFDF5; color: #065F46; }
+.badge-orange { background: #FFF7ED; color: #C2410C; }
+
+/* ---- 代碼塊 ---- */
+pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ---- Model Card 閱讀器 ---- */
+.model-card-section {
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    transition: background 0.15s ease;
+    border: 1px solid transparent;
+}
+.model-card-section:hover {
+    background-color: #F0F9FF;
+    border-color: #BAE6FD;
+}
+.model-card-section.labeled {
+    background-color: #F5F3FF;
+    border-color: #C4B5FD;
+}
+
+/* ---- 比較實驗 ---- */
+.version-btn {
+    transition: all 0.15s ease;
+}
+.version-btn.active {
+    transform: scale(1.02);
+}
+
+/* ---- 成本條 ---- */
+.cost-bar {
+    height: 8px;
+    border-radius: 9999px;
+    transition: width 0.8s ease;
+}
+
+/* ---- 滑桿美化 ---- */
+input[type="range"] {
+    height: 4px;
+    border-radius: 2px;
+}
+
+/* ---- Toast 通知 ---- */
+#toast {
+    transition: all 0.3s ease;
+}
+#toast.show {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* ---- 分頁切換 ---- */
+.tab-content, .tab-b-content, .tab-c-content, .step-content {
+    animation: fadeIn 0.25s ease-out;
+}
+
+/* ---- 模式切換器 ---- */
+#mode-toggle {
+    transition: all 0.2s ease;
+}
+#mode-toggle:hover {
+    opacity: 0.8;
+}
+
+/* ---- 流程步驟 ---- */
+.step-connector {
+    position: relative;
+}
+.step-connector::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -1rem;
+    width: 2rem;
+    height: 2px;
+    background: linear-gradient(to right, #E5E7EB, #9CA3AF);
+}
+
+/* ---- 工廠終端機風格 ---- */
+.terminal {
+    background: #1a1a2e;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+.terminal .line-normal { color: #a0aec0; }
+.terminal .line-warn { color: #ffd700; }
+.terminal .line-error { color: #ff6b6b; }
+.terminal .line-ok { color: #00ff88; }
+
+/* ---- 決策樹節點 ---- */
+.decision-node {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.decision-node:hover {
+    transform: scale(1.02);
+}
+.decision-node.expanded .node-content {
+    max-height: 500px;
+    opacity: 1;
+}
+.node-content {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+/* ---- RWD 調整 ---- */
+@media (max-width: 640px) {
+    .hide-mobile { display: none; }
+    .text-mobile-sm { font-size: 0.8rem; }
+}
+
+/* ---- 列印樣式 ---- */
+@media print {
+    nav, footer, button, #toast { display: none !important; }
+    body { background: white; }
+    .shadow-sm, .shadow-lg, .shadow-2xl { box-shadow: none !important; }
+}

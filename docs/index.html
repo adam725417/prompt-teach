@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程首頁 Dashboard | 生成式 AI 實務決策流程</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'unit-a': '#3B82F6',
+                        'unit-b': '#8B5CF6',
+                        'unit-c': '#10B981',
+                        'unit-case': '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="./static/js/static-override.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./static/css/custom.css">
+
+    
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- 頂部導覽列 -->
+<nav class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+            <!-- Logo -->
+            <a href="./index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-sm hidden sm:block">生成式 AI 實務決策</span>
+                <span class="font-bold text-sm sm:hidden">AI 教學</span>
+            </a>
+
+            <!-- 單元導覽 -->
+            <div class="flex items-center gap-1 text-xs">
+                <a href="./unit-a.html" class="nav-unit px-2 py-1 rounded-md hover:bg-blue-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center text-xs font-bold">A</span>
+                    <span class="hidden md:inline">Prompt</span>
+                </a>
+                <a href="./unit-b.html" class="nav-unit px-2 py-1 rounded-md hover:bg-purple-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs font-bold">B</span>
+                    <span class="hidden md:inline">模型選型</span>
+                </a>
+                <a href="./unit-c.html" class="nav-unit px-2 py-1 rounded-md hover:bg-green-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-green-500 rounded text-white flex items-center justify-center text-xs font-bold">C</span>
+                    <span class="hidden md:inline">部署選型</span>
+                </a>
+            </div>
+
+            <!-- 右側工具 -->
+            <div class="flex items-center gap-2">
+                <!-- 模式切換 -->
+                <div id="mode-toggle" class="flex items-center gap-1 text-xs cursor-pointer" title="切換教學模式">
+                    <span id="mode-icon" class="text-yellow-400"><i class="fas fa-graduation-cap"></i></span>
+                    <span id="mode-label" class="hidden sm:inline text-gray-300">教學模式</span>
+                </div>
+                <!-- 學生姓名 -->
+                <button onclick="showNameModal()" class="text-gray-400 hover:text-white transition text-xs flex items-center gap-1">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="nav-username" class="hidden sm:inline">學生</span>
+                </button>
+                <!-- 教師模式 -->
+                <a href="#" class="text-gray-500 hover:text-gray-300 transition text-xs" title="教師面板">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 進度條（頂部細線）-->
+<div class="h-1 bg-gray-200">
+    <div id="global-progress-bar" class="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 transition-all duration-500"
+         style="width: 0%"></div>
+</div>
+
+<!-- 主內容 -->
+<main class="">
+    
+<!-- Hero Banner -->
+<div class="bg-gradient-to-br from-gray-900 via-blue-950 to-purple-950 text-white py-12 px-4">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row items-center gap-8">
+            <div class="flex-1">
+                <h1 class="text-3xl md:text-4xl font-black mb-3 leading-tight">
+                    生成式 AI 的<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-orange-400">
+                        實務決策流程
+                    </span>
+                </h1>
+                <p class="text-gray-300 text-base mb-6">
+                    從 Prompt 設計到模型選型，從硬體規劃到工廠落地<br>
+                    學會工程師的 AI 決策思維，不只是用 AI，而是<strong class="text-white">懂 AI</strong>
+                </p>
+                <!-- 今天會學到 -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-white bg-opacity-10 rounded-xl p-3 text-center">
+                        <div class="text-2xl mb-1">🎯</div>
+                        <div class="text-xs text-gray-300">設計可執行的<br><span class="text-white font-bold">Prompt 結構</span></div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-3 text-center">
+                        <div class="text-2xl mb-1">🔍</div>
+                        <div class="text-xs text-gray-300">讀懂 Model Card<br><span class="text-white font-bold">做工程決策</span></div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-3 text-center">
+                        <div class="text-2xl mb-1">🏭</div>
+                        <div class="text-xs text-gray-300">把 AI 方案<br><span class="text-white font-bold">落地工廠</span></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 整體進度卡 -->
+            <div class="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-2xl p-6 w-full md:w-72">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-300">你的學習進度</span>
+                    <span class="text-lg font-bold text-white">0%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-3 mb-4">
+                    <div class="h-3 bg-gradient-to-r from-blue-500 to-orange-400 rounded-full transition-all duration-1000"
+                         id="hero-progress" style="width: 0%"></div>
+                </div>
+                <!-- 徽章展示 -->
+                <div class="space-y-2">
+                    
+                    
+                    <div class="flex items-center gap-2 opacity-40">
+                        <div class="w-7 h-7 rounded-lg bg-gray-600 flex items-center justify-center text-sm">
+                            🎨
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-white font-medium">Prompt 設計師</div>
+                        </div>
+                        
+                        <i class="fas fa-lock text-gray-500 text-xs"></i>
+                        
+                    </div>
+                    
+                    <div class="flex items-center gap-2 opacity-40">
+                        <div class="w-7 h-7 rounded-lg bg-gray-600 flex items-center justify-center text-sm">
+                            🔍
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-white font-medium">Model Card 偵探</div>
+                        </div>
+                        
+                        <i class="fas fa-lock text-gray-500 text-xs"></i>
+                        
+                    </div>
+                    
+                    <div class="flex items-center gap-2 opacity-40">
+                        <div class="w-7 h-7 rounded-lg bg-gray-600 flex items-center justify-center text-sm">
+                            🏗️
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-white font-medium">部署架構師</div>
+                        </div>
+                        
+                        <i class="fas fa-lock text-gray-500 text-xs"></i>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 學習路徑地圖 -->
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <i class="fas fa-map-signs text-blue-500"></i>
+        學習路徑
+        <span class="text-sm font-normal text-gray-500 ml-2">按順序完成效果最好</span>
+    </h2>
+
+    <!-- 路徑卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- 單元 A -->
+        <a href="./unit-a.html" class="unit-card group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-lg hover:border-blue-200 transition-all hover:-translate-y-1 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-black text-lg">A</div>
+                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">先有感</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">Prompt 核心原理</h3>
+            <p class="text-xs text-gray-500 mb-3">學會設計可執行的 Prompt，理解五要素與角色結構</p>
+            <div class="space-y-1 text-xs text-gray-400">
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-blue-300 text-xs"></i> Prompt 五要素</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-blue-300 text-xs"></i> System / User / Assistant 結構</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-blue-300 text-xs"></i> 同題對比實驗</div>
+            </div>
+            <div class="mt-3 flex items-center text-blue-500 text-xs font-medium group-hover:gap-2 gap-1 transition-all">
+                <span>開始學習</span><i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- 單元 B -->
+        <a href="./unit-b.html" class="unit-card group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-lg hover:border-purple-200 transition-all hover:-translate-y-1 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-black text-lg">B</div>
+                <span class="text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-full">知道極限</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">模型挑選與 Model Card</h3>
+            <p class="text-xs text-gray-500 mb-3">當 Prompt 無法解決問題，換模型才是答案</p>
+            <div class="space-y-1 text-xs text-gray-400">
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-purple-300 text-xs"></i> 選型六步驟流程</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-purple-300 text-xs"></i> Model Card 解剖台</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-purple-300 text-xs"></i> 模型 PK 分組活動</div>
+            </div>
+            <div class="mt-3 flex items-center text-purple-500 text-xs font-medium group-hover:gap-2 gap-1 transition-all">
+                <span>開始學習</span><i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- 單元 C -->
+        <a href="./unit-c.html" class="unit-card group bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-lg hover:border-green-200 transition-all hover:-translate-y-1 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+            <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 font-black text-lg">C</div>
+                <span class="text-xs bg-green-50 text-green-600 px-2 py-1 rounded-full">落地</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">硬體與部署選型</h3>
+            <p class="text-xs text-gray-500 mb-3">雲端、地端、混合──做出有依據的架構決策</p>
+            <div class="space-y-1 text-xs text-gray-400">
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-green-300 text-xs"></i> 部署方案比較</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-green-300 text-xs"></i> 決策模擬器</div>
+                <div class="flex items-center gap-1"><i class="fas fa-circle-dot text-green-300 text-xs"></i> 成本試算工具</div>
+            </div>
+            <div class="mt-3 flex items-center text-green-500 text-xs font-medium group-hover:gap-2 gap-1 transition-all">
+                <span>開始學習</span><i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+
+
+    </div>
+
+    <!-- 路徑指示 -->
+    <div class="flex items-center justify-center gap-2 mt-4 text-xs text-gray-400">
+        <span class="px-2 py-1 bg-blue-50 text-blue-500 rounded">A</span>
+        <i class="fas fa-arrow-right"></i>
+        <span class="px-2 py-1 bg-purple-50 text-purple-500 rounded">B</span>
+        <i class="fas fa-arrow-right"></i>
+        <span class="px-2 py-1 bg-green-50 text-green-500 rounded">C</span>
+        <span class="text-gray-300">（建議按順序完成）</span>
+    </div>
+</div>
+
+<!-- 今日學習亮點 & 快速導覽 -->
+<div class="max-w-6xl mx-auto px-4 pb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 今日你會學到 -->
+        <div class="lg:col-span-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-yellow-500"></i>
+                今天學完你會知道
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="bg-white rounded-xl p-3 flex items-start gap-3">
+                    <span class="text-blue-500 mt-0.5">💬</span>
+                    <div>
+                        <div class="font-medium text-gray-800">Prompt 不是咒語</div>
+                        <div class="text-xs text-gray-500">而是把任務需求轉成模型可執行的工程設計</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-3 flex items-start gap-3">
+                    <span class="mt-0.5">🧩</span>
+                    <div>
+                        <div class="font-medium text-gray-800">System ≠ User ≠ Assistant</div>
+                        <div class="text-xs text-gray-500">三種訊息角色各有用途，放錯位置效果天差地遠</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-3 flex items-start gap-3">
+                    <span class="mt-0.5">📋</span>
+                    <div>
+                        <div class="font-medium text-gray-800">Model Card 不是裝飾品</div>
+                        <div class="text-xs text-gray-500">授權、語言支援、限制──每個欄位都影響決策</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-3 flex items-start gap-3">
+                    <span class="mt-0.5">💰</span>
+                    <div>
+                        <div class="font-medium text-gray-800">能跑起來 ≠ 能上線</div>
+                        <div class="text-xs text-gray-500">還有延遲、成本、維運、資料安全要考量</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速導覽 / 課堂模式 -->
+        <div class="space-y-4">
+            <!-- 課堂模式切換 -->
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                <h3 class="font-bold text-gray-700 text-sm mb-3 flex items-center gap-2">
+                    <i class="fas fa-sliders text-gray-500"></i>課堂模式
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setMode('guided')" id="btn-guided"
+                        class="mode-btn text-xs py-2 px-3 rounded-xl border-2 border-blue-400 bg-blue-50 text-blue-600 font-medium transition">
+                        <i class="fas fa-graduation-cap mr-1"></i>教學模式
+                        <div class="text-gray-400 font-normal mt-0.5">顯示提示</div>
+                    </button>
+                    <button onclick="setMode('challenge')" id="btn-challenge"
+                        class="mode-btn text-xs py-2 px-3 rounded-xl border-2 border-gray-200 text-gray-500 hover:border-yellow-400 hover:bg-yellow-50 hover:text-yellow-600 transition">
+                        <i class="fas fa-bolt mr-1"></i>挑戰模式
+                        <div class="text-gray-400 font-normal mt-0.5">隱藏提示</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 工廠資料預覽 -->
+            <div class="bg-gray-900 rounded-2xl p-4 text-white">
+                <h3 class="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <i class="fas fa-terminal"></i> 今日案例資料預覽
+                </h3>
+                <div class="space-y-1 text-xs font-mono">
+                    <div class="text-green-400">WE-27 | 收線張力波動 ±15%</div>
+                    <div class="text-yellow-400">CNC-03 | 主軸溫度 92°C 超標</div>
+                    <div class="text-red-400">PRS-11 | 液壓系統壓力異常</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setMode(mode) {
+    $.ajax({
+        url: '/set-mode', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({mode: mode}),
+        success: function(data) {
+            if (mode === 'guided') {
+                $('#btn-guided').addClass('border-blue-400 bg-blue-50 text-blue-600').removeClass('border-gray-200 text-gray-500');
+                $('#btn-challenge').addClass('border-gray-200 text-gray-500').removeClass('border-yellow-400 bg-yellow-50 text-yellow-600');
+                showToast('🎓', '已切換至教學模式');
+            } else {
+                $('#btn-challenge').addClass('border-yellow-400 bg-yellow-50 text-yellow-600').removeClass('border-gray-200 text-gray-500');
+                $('#btn-guided').addClass('border-gray-200 text-gray-500').removeClass('border-blue-400 bg-blue-50 text-blue-600');
+                showToast('⚡', '已切換至挑戰模式（提示已隱藏）');
+            }
+        }
+    });
+}
+
+// 初始化模式按鈕
+$(document).ready(function() {
+    var mode = 'guided';
+    if (mode === 'challenge') {
+        $('#btn-challenge').addClass('border-yellow-400 bg-yellow-50 text-yellow-600');
+        $('#btn-guided').addClass('border-gray-200 text-gray-500').removeClass('border-blue-400 bg-blue-50 text-blue-600');
+    }
+});
+</script>
+
+</main>
+
+<!-- 底部 -->
+<footer class="bg-gray-900 text-gray-500 text-center py-4 mt-12 text-xs">
+    <p>🎓生成式 AI 實務決策流程教學平台</p>
+</footer>
+
+<!-- 姓名設定 Modal -->
+<div id="name-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-user-edit text-blue-500 mr-2"></i>設定你的名稱
+        </h3>
+        <input type="text" id="name-input" placeholder="輸入你的姓名或學號"
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4">
+        <div class="flex gap-2">
+            <button onclick="saveName()" class="flex-1 bg-blue-500 text-white rounded-lg py-2 text-sm hover:bg-blue-600 transition">
+                確定
+            </button>
+            <button onclick="hideNameModal()" class="flex-1 bg-gray-100 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-200 transition">
+                取消
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示 Toast -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm hidden z-50 max-w-xs">
+    <div class="flex items-center gap-2">
+        <span id="toast-icon">✅</span>
+        <span id="toast-msg">操作成功</span>
+    </div>
+</div>
+
+<!-- Main JS -->
+<script src="./static/js/main.js"></script>
+
+
+
+<script>
+// 初始化全域進度條
+$(document).ready(function() {
+    $.get('/api/progress', function(data) {
+        var completed = data.badges.filter(b => b.earned).length;
+        var pct = Math.min(completed / 4 * 100, 100);
+        $('#global-progress-bar').css('width', pct + '%');
+    });
+
+    // 初始化模式標籤
+    var mode = 'guided';
+    updateModeUI(mode);
+});
+
+function showNameModal() {
+    var current = $('#nav-username').text();
+    $('#name-input').val(current !== '設定姓名' ? current : '');
+    $('#name-modal').removeClass('hidden');
+    setTimeout(() => $('#name-input').focus(), 100);
+}
+function hideNameModal() { $('#name-modal').addClass('hidden'); }
+function saveName() {
+    var name = $('#name-input').val().trim();
+    if (!name) return;
+    $.ajax({ url: '/set-name', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({name: name}),
+        success: function() {
+            $('#nav-username').text(name);
+            hideNameModal();
+            showToast('✅', '姓名已更新：' + name);
+        }
+    });
+}
+
+function updateModeUI(mode) {
+    if (mode === 'challenge') {
+        $('#mode-icon').html('<i class="fas fa-bolt text-yellow-400"></i>');
+        $('#mode-label').text('挑戰模式');
+        $('.hint-box').addClass('hidden');
+    } else {
+        $('#mode-icon').html('<i class="fas fa-graduation-cap text-blue-400"></i>');
+        $('#mode-label').text('教學模式');
+        $('.hint-box').removeClass('hidden');
+    }
+}
+
+$('#mode-toggle').click(function() {
+    var current = $(this).data('mode') || 'guided';
+    var next = current === 'guided' ? 'challenge' : 'guided';
+    $(this).data('mode', next);
+    $.ajax({ url: '/set-mode', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({mode: next}),
+        success: function() {
+            updateModeUI(next);
+            showToast('🔄', next === 'challenge' ? '已切換至挑戰模式（提示已隱藏）' : '已切換至教學模式');
+        }
+    });
+});
+</script>
+
+</body>
+</html>

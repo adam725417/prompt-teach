@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}單元 C：硬體與部署選型{% endblock %}
+
+{% block content %}
+<!-- 單元標題 -->
+<div class="bg-gradient-to-r from-emerald-600 to-emerald-900 text-white py-6 px-4 -mx-4 -mt-6 mb-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-4">
+        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-2xl font-black">C</div>
+        <div>
+            <div class="text-emerald-200 text-xs mb-0.5">單元 C</div>
+            <h1 class="text-2xl font-black">硬體與部署選型</h1>
+            <p class="text-emerald-200 text-sm">「能跑起來 ≠ 能上線」</p>
+        </div>
+        <div class="ml-auto hidden md:block">
+            <div class="text-xs text-emerald-200">包含</div>
+            <div class="text-sm font-bold">6 個模組 · 5 題測驗 · 決策模擬器</div>
+        </div>
+    </div>
+</div>
+
+<!-- 分頁導覽 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="flex flex-wrap gap-2 bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+        {% set tabs = [
+            ('c1', 'fas fa-server', '方案總覽'),
+            ('c2', 'fas fa-sliders', '決策模擬器'),
+            ('c3', 'fas fa-microchip', '記憶體概念'),
+            ('c4', 'fas fa-calculator', '成本試算'),
+            ('c5', 'fas fa-triangle-exclamation', '常見誤區'),
+            ('c6', 'fas fa-clipboard-question', '小測驗'),
+        ] %}
+        {% for tab_id, icon, label in tabs %}
+        <button onclick="showTabC('{{ tab_id }}')"
+            id="tab-btn-{{ tab_id }}"
+            class="tab-btn-c flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   {% if active_tab == tab_id %}bg-emerald-500 text-white shadow{% else %}text-gray-500 hover:bg-gray-100{% endif %}">
+            <i class="{{ icon }} text-xs"></i>{{ label }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto space-y-4">
+
+<!-- ============================================================
+     C-1: 部署方案總覽
+     ============================================================ -->
+<div id="tab-c1" class="tab-c-content {% if active_tab != 'c1' %}hidden{% endif %}">
+
+    <div class="hint-box bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-sm text-emerald-700 flex items-start gap-2">
+        <i class="fas fa-circle-info mt-0.5"></i>
+        <div><strong>教學提示：</strong>點擊三種方案的卡片，展開詳細比較。每個方案都有「適用情境」，沒有絕對最好的方案！</div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">三種部署方案比較</h2>
+    <p class="text-gray-500 text-sm mb-6">雲端 vs. 地端 vs. 混合——不同情境有不同最優解</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="deployment-cards">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 決策矩陣 -->
+    <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm overflow-x-auto">
+        <h3 class="font-bold text-gray-700 mb-3">決策矩陣速查表</h3>
+        <table class="w-full text-xs border-collapse min-w-96">
+            <thead>
+                <tr class="bg-gray-50">
+                    <th class="text-left p-3 rounded-tl-lg font-semibold text-gray-600">考量因素</th>
+                    <th class="text-center p-3 text-blue-600 bg-blue-50">☁️ 純雲端</th>
+                    <th class="text-center p-3 text-purple-600 bg-purple-50">🔀 混合</th>
+                    <th class="text-center p-3 rounded-tr-lg text-green-600 bg-green-50">🏭 純地端</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600">
+                <tr class="border-b border-gray-50">
+                    <td class="p-3 font-medium">初期成本</td>
+                    <td class="p-3 text-center">✅ 低（按量付費）</td>
+                    <td class="p-3 text-center">⚠️ 中（部分硬體）</td>
+                    <td class="p-3 text-center">❗ 高（GPU 設備）</td>
+                </tr>
+                <tr class="border-b border-gray-50">
+                    <td class="p-3 font-medium">長期成本</td>
+                    <td class="p-3 text-center">⚠️ 量大時高</td>
+                    <td class="p-3 text-center">✅ 中等</td>
+                    <td class="p-3 text-center">✅ 低（攤提後）</td>
+                </tr>
+                <tr class="border-b border-gray-50">
+                    <td class="p-3 font-medium">資料安全</td>
+                    <td class="p-3 text-center">❗ 較低</td>
+                    <td class="p-3 text-center">⚠️ 可分流</td>
+                    <td class="p-3 text-center">✅ 最高</td>
+                </tr>
+                <tr class="border-b border-gray-50">
+                    <td class="p-3 font-medium">維運複雜度</td>
+                    <td class="p-3 text-center">✅ 低</td>
+                    <td class="p-3 text-center">❗ 高</td>
+                    <td class="p-3 text-center">⚠️ 中</td>
+                </tr>
+                <tr>
+                    <td class="p-3 font-medium">部署速度</td>
+                    <td class="p-3 text-center">✅ 最快</td>
+                    <td class="p-3 text-center">⚠️ 中</td>
+                    <td class="p-3 text-center">❗ 最慢</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ============================================================
+     C-2: 決策模擬器
+     ============================================================ -->
+<div id="tab-c2" class="tab-c-content {% if active_tab != 'c2' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">部署方案決策模擬器</h2>
+    <p class="text-gray-500 text-sm mb-6">輸入你的條件，系統推薦最適合的部署方案（規則式決策引擎）</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 左側：輸入條件 -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-5">
+            <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                <i class="fas fa-sliders text-emerald-500"></i>輸入你的條件
+            </h3>
+
+            <!-- 資料敏感度 -->
+            <div>
+                <label class="text-sm font-medium text-gray-600 mb-2 block">
+                    <i class="fas fa-lock text-gray-400 mr-1"></i>資料敏感度
+                </label>
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="sensitivity" value="低" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-green-400 peer-checked:bg-green-50 peer-checked:text-green-600 border-gray-200 text-gray-500 hover:border-gray-300">低</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="sensitivity" value="中" class="sr-only peer" checked>
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-yellow-400 peer-checked:bg-yellow-50 peer-checked:text-yellow-600 border-gray-200 text-gray-500 hover:border-gray-300">中</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="sensitivity" value="高" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-red-400 peer-checked:bg-red-50 peer-checked:text-red-600 border-gray-200 text-gray-500 hover:border-gray-300">高</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 延遲需求 -->
+            <div>
+                <label class="text-sm font-medium text-gray-600 mb-2 block">
+                    <i class="fas fa-bolt text-gray-400 mr-1"></i>延遲需求
+                </label>
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="latency" value="即時" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 hover:border-gray-300">即時<br><span class="text-xs">&lt;1s</span></div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="latency" value="分鐘級" class="sr-only peer" checked>
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 hover:border-gray-300">分鐘級<br><span class="text-xs">1-5min</span></div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="latency" value="批次" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 hover:border-gray-300">批次<br><span class="text-xs">&gt;1hr</span></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 每日查詢量 -->
+            <div>
+                <label class="text-sm font-medium text-gray-600 mb-2 block">
+                    <i class="fas fa-chart-bar text-gray-400 mr-1"></i>每日查詢量：
+                    <span id="query-value" class="text-emerald-600 font-bold">300</span> 次
+                </label>
+                <input type="range" id="daily-queries" min="10" max="10000" value="300" step="10"
+                    class="w-full accent-emerald-500" oninput="document.getElementById('query-value').textContent=this.value">
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>10</span><span>1,000</span><span>5,000</span><span>10,000</span>
+                </div>
+            </div>
+
+            <!-- 預算 -->
+            <div>
+                <label class="text-sm font-medium text-gray-600 mb-2 block">
+                    <i class="fas fa-dollar-sign text-gray-400 mr-1"></i>預算水位
+                </label>
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="budget" value="低" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">低</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="budget" value="中" class="sr-only peer" checked>
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">中</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="budget" value="高" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">高</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 維運能力 -->
+            <div>
+                <label class="text-sm font-medium text-gray-600 mb-2 block">
+                    <i class="fas fa-users-gear text-gray-400 mr-1"></i>維運能力（IT / DevOps）
+                </label>
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="ops" value="弱" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">弱</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="ops" value="中" class="sr-only peer" checked>
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">中</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer"><input type="radio" name="ops" value="強" class="sr-only peer">
+                        <div class="text-center py-2 rounded-xl border-2 text-sm transition peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500">強</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 內網需求 -->
+            <div>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" id="needs-intranet" class="w-4 h-4 accent-emerald-500">
+                    <span class="text-sm font-medium text-gray-600">需要內網整合（不允許資料離開內部網路）</span>
+                </label>
+            </div>
+
+            <button onclick="runSimulation()" class="w-full bg-emerald-500 text-white py-3 rounded-xl font-medium hover:bg-emerald-600 transition flex items-center justify-center gap-2">
+                <i class="fas fa-play"></i>執行決策模擬
+            </button>
+        </div>
+
+        <!-- 右側：推薦結果 -->
+        <div id="simulation-result" class="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-5 flex items-center justify-center">
+            <div class="text-center text-gray-400">
+                <i class="fas fa-robot text-4xl mb-3 text-gray-300"></i>
+                <p class="text-sm">填入條件後點擊「執行決策模擬」<br>系統將推薦最適合的部署方案</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     C-3: 記憶體與模型大小觀念
+     ============================================================ -->
+<div id="tab-c3" class="tab-c-content {% if active_tab != 'c3' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">記憶體與模型大小觀念</h2>
+    <p class="text-gray-500 text-sm mb-4">「7B 模型需要 7GB」——這是最常見的錯誤認知！</p>
+
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <i class="fas fa-circle-exclamation text-red-500 mt-0.5"></i>
+        <div class="text-sm text-red-700">
+            <strong>迷思破除：</strong>7B 參數 ≠ 7GB 記憶體。實際需求還包含精度（FP16 vs INT4）、KV Cache、Context Length、Batch Size 等因素。
+        </div>
+    </div>
+
+    <!-- 互動計算器 -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm mb-6">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center gap-2">
+            <i class="fas fa-calculator text-emerald-500"></i>GPU 記憶體估算互動器
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <!-- 參數量 -->
+                <div>
+                    <label class="text-sm font-medium text-gray-600 block mb-2">
+                        模型參數量：<span id="params-display" class="text-emerald-600 font-bold">7B</span>
+                    </label>
+                    <input type="range" id="model-params" min="1" max="70" value="7" step="1"
+                        class="w-full accent-emerald-500" oninput="updateMemCalc()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>1B</span><span>7B</span><span>13B</span><span>32B</span><span>70B</span>
+                    </div>
+                </div>
+
+                <!-- 精度 -->
+                <div>
+                    <label class="text-sm font-medium text-gray-600 block mb-2">推論精度</label>
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <label class="cursor-pointer"><input type="radio" name="precision" value="4" class="sr-only peer" id="prec-4">
+                            <div class="text-center py-2 rounded-xl border-2 peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 transition">INT4<br><span class="text-gray-400">量化</span></div>
+                        </label>
+                        <label class="cursor-pointer"><input type="radio" name="precision" value="8" class="sr-only peer" id="prec-8">
+                            <div class="text-center py-2 rounded-xl border-2 peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 transition">INT8<br><span class="text-gray-400">半量化</span></div>
+                        </label>
+                        <label class="cursor-pointer"><input type="radio" name="precision" value="16" class="sr-only peer" id="prec-16" checked>
+                            <div class="text-center py-2 rounded-xl border-2 peer-checked:border-emerald-400 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 border-gray-200 text-gray-500 transition">FP16<br><span class="text-gray-400">標準</span></div>
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">精度選擇影響：INT4 品質略降但速度快；FP16 品質最佳但記憶體需求最大</p>
+                </div>
+
+                <!-- Context Length -->
+                <div>
+                    <label class="text-sm font-medium text-gray-600 block mb-2">
+                        Context 長度：<span id="context-display" class="text-emerald-600 font-bold">2K</span> tokens
+                    </label>
+                    <input type="range" id="context-length" min="512" max="32768" value="2048" step="512"
+                        class="w-full accent-emerald-500" oninput="updateMemCalc()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>512</span><span>4K</span><span>16K</span><span>32K</span>
+                    </div>
+                </div>
+
+                <!-- Batch Size -->
+                <div>
+                    <label class="text-sm font-medium text-gray-600 block mb-2">
+                        Batch Size：<span id="batch-display" class="text-emerald-600 font-bold">1</span>
+                    </label>
+                    <input type="range" id="batch-size" min="1" max="32" value="1" step="1"
+                        class="w-full accent-emerald-500" oninput="updateMemCalc()">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>1</span><span>8</span><span>16</span><span>32</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：結果顯示 -->
+            <div>
+                <div id="mem-result-display" class="space-y-3">
+                    <!-- 由 JS updateMemCalc() 渲染 -->
+                </div>
+                <div class="mt-4 bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-1">
+                    <p>📌 估算公式（簡化版）：</p>
+                    <p>模型權重 = 參數量 × 精度位元數 / 8</p>
+                    <p>KV Cache ≈ context × batch × 隱藏層大小 × 2 / 精度</p>
+                    <p class="text-gray-400">（實際需求因模型架構略有差異）</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 常見 GPU 對應 -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <h3 class="font-bold text-gray-700 mb-3">常見 GPU 記憶體規格對應</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs" id="gpu-cards">
+            <!-- 由 JS 渲染 -->
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     C-4: 成本試算
+     ============================================================ -->
+<div id="tab-c4" class="tab-c-content {% if active_tab != 'c4' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">成本試算工具（教學版）</h2>
+    <p class="text-gray-500 text-sm mb-6">了解 CapEx vs OpEx 的差異，以及何時值得轉地端</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 輸入 -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                <i class="fas fa-edit text-emerald-500"></i>輸入使用情境
+            </h3>
+            <div>
+                <label class="text-sm text-gray-600 block mb-1">使用人數（同時）</label>
+                <input type="number" id="cost-users" value="10" min="1" max="1000"
+                    class="w-full border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    oninput="calcCost()">
+            </div>
+            <div>
+                <label class="text-sm text-gray-600 block mb-1">
+                    每日請求次數：<span id="cost-requests-display" class="text-emerald-600 font-bold">300</span>
+                </label>
+                <input type="range" id="cost-requests" min="10" max="50000" value="300" step="10"
+                    class="w-full accent-emerald-500" oninput="document.getElementById('cost-requests-display').textContent=this.value; calcCost()">
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>10</span><span>1K</span><span>10K</span><span>50K</span>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm text-gray-600 block mb-1">
+                    平均單次 Token 量
+                </label>
+                <select id="cost-tokens" class="w-full border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" onchange="calcCost()">
+                    <option value="200">短文本（約 200 tokens）</option>
+                    <option value="500" selected>中文本（約 500 tokens）</option>
+                    <option value="2000">長文本（約 2000 tokens）</option>
+                    <option value="8000">超長文本（約 8000 tokens）</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 輸出 -->
+        <div id="cost-result" class="space-y-4">
+            <!-- 由 JS 渲染 -->
+        </div>
+    </div>
+
+    <!-- CapEx vs OpEx 說明 -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+            <h3 class="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                <i class="fas fa-cloud text-blue-500"></i>OpEx（運營支出）= 雲端 API
+            </h3>
+            <ul class="text-sm text-blue-700 space-y-1">
+                <li>✅ 無前期投資，用多少付多少</li>
+                <li>✅ 快速啟動，立即驗證</li>
+                <li>⚠️ 規模化後費用線性成長</li>
+                <li>❗ 服務依賴廠商，有停服風險</li>
+            </ul>
+        </div>
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-4">
+            <h3 class="font-bold text-green-800 mb-2 flex items-center gap-2">
+                <i class="fas fa-server text-green-500"></i>CapEx（資本支出）= 地端部署
+            </h3>
+            <ul class="text-sm text-green-700 space-y-1">
+                <li>✅ 一次性硬體投資</li>
+                <li>✅ 長期使用後每次成本極低</li>
+                <li>⚠️ 前期投資高，需要維運能力</li>
+                <li>❗ 硬體升級需再投資</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     C-5: 常見誤區
+     ============================================================ -->
+<div id="tab-c5" class="tab-c-content {% if active_tab != 'c5' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">常見誤區提醒</h2>
+    <p class="text-gray-500 text-sm mb-6">部署最容易造成「花了大錢買了教訓」的 5 個誤區</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mistakes-grid-c">
+        <!-- 由 JS 渲染 -->
+    </div>
+</div>
+
+<!-- ============================================================
+     C-6: 小測驗
+     ============================================================ -->
+<div id="tab-c6" class="tab-c-content {% if active_tab != 'c6' %}hidden{% endif %}">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">單元 C 小測驗</h2>
+    <p class="text-gray-500 text-sm mb-6">5 道題，測驗你的部署決策判斷力</p>
+
+    <div id="quiz-container-c" class="space-y-6">
+        <!-- 由 JS 渲染 -->
+    </div>
+    <button id="quiz-submit-c" onclick="submitQuizC()" class="hidden mt-6 bg-emerald-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-emerald-600 transition flex items-center gap-2">
+        <i class="fas fa-paper-plane"></i>提交測驗
+    </button>
+    <div id="quiz-result-c" class="hidden mt-4 p-5 rounded-2xl"></div>
+</div>
+
+</div>
+
+<script>
+var C_QUIZZES_DATA = {{ c_quizzes|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/unit_c.js') }}"></script>
+{% endblock %}

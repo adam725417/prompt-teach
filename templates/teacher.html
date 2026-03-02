@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}教師管理面板{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="bg-gray-900 text-white rounded-2xl p-6 mb-6">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-chalkboard-teacher text-yellow-400"></i>教師管理面板
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">課堂資料統計與重置工具</p>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-blue-500">{{ user_count }}</div>
+            <div class="text-xs text-gray-500">學生 / Session 數</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-purple-500">{{ quiz_count }}</div>
+            <div class="text-xs text-gray-500">測驗作答次數</div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-green-500">
+                {{ unit_completions.values()|list|sum }}
+            </div>
+            <div class="text-xs text-gray-500">單元完成次數</div>
+        </div>
+    </div>
+
+    <!-- 單元完成統計 -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-6">
+        <h2 class="font-bold text-gray-700 mb-4">各單元完成人數</h2>
+        <div class="grid grid-cols-4 gap-4">
+            {% for unit, count in unit_completions.items() %}
+            <div class="text-center">
+                <div class="text-2xl font-black
+                    {% if unit == 'A' %}text-blue-500
+                    {% elif unit == 'B' %}text-purple-500
+                    {% elif unit == 'C' %}text-green-500
+                    {% else %}text-orange-500{% endif %}">{{ count }}</div>
+                <div class="text-xs text-gray-500">單元 {{ unit }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 操作區 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+            <h2 class="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-download text-green-500"></i>匯出學生資料
+            </h2>
+            <p class="text-sm text-gray-500 mb-3">下載所有學生的測驗結果（CSV 格式，可用 Excel 開啟）</p>
+            <a href="/api/teacher/export" class="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-xl text-sm hover:bg-green-600 transition">
+                <i class="fas fa-file-csv"></i>下載 CSV
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-red-100 shadow-sm">
+            <h2 class="font-bold text-red-600 mb-2 flex items-center gap-2">
+                <i class="fas fa-rotate-left text-red-500"></i>重置所有資料
+            </h2>
+            <p class="text-sm text-gray-500 mb-3">清除全班學生資料，適合在課堂重新示範前使用</p>
+            <div class="flex gap-2">
+                <input type="text" id="reset-confirm" placeholder="輸入 RESET_ALL 確認"
+                    class="flex-1 border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200">
+                <button onclick="resetAllData()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-sm hover:bg-red-600 transition">
+                    重置
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resetAllData() {
+    var confirm = $('#reset-confirm').val();
+    if (confirm !== 'RESET_ALL') {
+        showToast('❌', '請輸入確認碼 RESET_ALL');
+        return;
+    }
+    if (!window.confirm('確定要刪除所有學生資料嗎？此操作不可還原！')) return;
+    $.ajax({
+        url: '/api/teacher/reset', method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({confirm: 'RESET_ALL'}),
+        success: function(data) {
+            showToast('✅', '資料已重置完成');
+            setTimeout(() => location.reload(), 1500);
+        },
+        error: function(xhr) {
+            showToast('❌', xhr.responseJSON?.error || '重置失敗');
+        }
+    });
+}
+</script>
+{% endblock %}

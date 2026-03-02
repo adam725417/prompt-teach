@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單元 B：Hugging Face 模型挑選與 Model Card | 生成式 AI 實務決策流程</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'unit-a': '#3B82F6',
+                        'unit-b': '#8B5CF6',
+                        'unit-c': '#10B981',
+                        'unit-case': '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="./static/js/static-override.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./static/css/custom.css">
+
+    
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- 頂部導覽列 -->
+<nav class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+            <!-- Logo -->
+            <a href="./index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-sm hidden sm:block">生成式 AI 實務決策</span>
+                <span class="font-bold text-sm sm:hidden">AI 教學</span>
+            </a>
+
+            <!-- 單元導覽 -->
+            <div class="flex items-center gap-1 text-xs">
+                <a href="./unit-a.html" class="nav-unit px-2 py-1 rounded-md hover:bg-blue-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center text-xs font-bold">A</span>
+                    <span class="hidden md:inline">Prompt</span>
+                </a>
+                <a href="./unit-b.html" class="nav-unit px-2 py-1 rounded-md hover:bg-purple-600 transition flex items-center gap-1
+                    bg-purple-600">
+                    <span class="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs font-bold">B</span>
+                    <span class="hidden md:inline">模型選型</span>
+                </a>
+                <a href="./unit-c.html" class="nav-unit px-2 py-1 rounded-md hover:bg-green-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-green-500 rounded text-white flex items-center justify-center text-xs font-bold">C</span>
+                    <span class="hidden md:inline">部署選型</span>
+                </a>
+            </div>
+
+            <!-- 右側工具 -->
+            <div class="flex items-center gap-2">
+                <!-- 模式切換 -->
+                <div id="mode-toggle" class="flex items-center gap-1 text-xs cursor-pointer" title="切換教學模式">
+                    <span id="mode-icon" class="text-yellow-400"><i class="fas fa-graduation-cap"></i></span>
+                    <span id="mode-label" class="hidden sm:inline text-gray-300">教學模式</span>
+                </div>
+                <!-- 學生姓名 -->
+                <button onclick="showNameModal()" class="text-gray-400 hover:text-white transition text-xs flex items-center gap-1">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="nav-username" class="hidden sm:inline">設定姓名</span>
+                </button>
+                <!-- 教師模式 -->
+                <a href="#" class="text-gray-500 hover:text-gray-300 transition text-xs" title="教師面板">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 進度條（頂部細線）-->
+<div class="h-1 bg-gray-200">
+    <div id="global-progress-bar" class="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 transition-all duration-500"
+         style="width: 0%"></div>
+</div>
+
+<!-- 主內容 -->
+<main class="max-w-7xl mx-auto px-4 py-6">
+    
+<!-- 單元標題 -->
+<div class="bg-gradient-to-r from-purple-600 to-purple-900 text-white py-6 px-4 -mx-4 -mt-6 mb-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-4">
+        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-2xl font-black">B</div>
+        <div>
+            <div class="text-purple-200 text-xs mb-0.5">單元 B</div>
+            <h1 class="text-2xl font-black">模型挑選與 Model Card</h1>
+            <p class="text-purple-200 text-sm">「模型很強，不代表適合你的場景」</p>
+        </div>
+        <div class="ml-auto hidden md:block">
+            <div class="text-xs text-purple-200">包含</div>
+            <div class="text-sm font-bold">5 個模組 · 5 題測驗 · 模型 PK 活動</div>
+        </div>
+    </div>
+</div>
+
+<!-- 分頁導覽 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="flex flex-wrap gap-2 bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+        
+        
+        <button onclick="showTabB('b1')"
+            id="tab-btn-b1"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   bg-purple-500 text-white shadow">
+            <i class="fas fa-diagram-project text-xs"></i>選型流程
+        </button>
+        
+        <button onclick="showTabB('b2')"
+            id="tab-btn-b2"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-file-magnifying-glass text-xs"></i>Model Card
+        </button>
+        
+        <button onclick="showTabB('b3')"
+            id="tab-btn-b3"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-trophy text-xs"></i>模型 PK
+        </button>
+        
+        <button onclick="showTabB('b4')"
+            id="tab-btn-b4"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-triangle-exclamation text-xs"></i>常見誤區
+        </button>
+        
+        <button onclick="showTabB('b5')"
+            id="tab-btn-b5"
+            class="tab-btn-b flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-clipboard-question text-xs"></i>小測驗
+        </button>
+        
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto space-y-4">
+
+<!-- ============================================================
+     B-1: 選型流程圖
+     ============================================================ -->
+<div id="tab-b1" class="tab-b-content ">
+
+    <div class="hint-box bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4 text-sm text-purple-700 flex items-start gap-2">
+        <i class="fas fa-circle-info mt-0.5"></i>
+        <div><strong>教學提示：</strong>點擊每個步驟，查看說明、工廠場景範例和常見誤判！6 個步驟依序完成，不要跳步。</div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">模型選型六步驟</h2>
+    <p class="text-gray-500 text-sm mb-6">選模型不是選「最強的」，而是選「最適合你場景的」</p>
+
+    <!-- 六步驟互動流程 -->
+    <div id="selection-steps" class="space-y-3">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <button onclick="showTabB('b2')" class="mt-6 bg-purple-500 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-purple-600 transition flex items-center gap-2">
+        下一步：Model Card 解剖台 <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
+
+<!-- ============================================================
+     B-2: Model Card 解剖台
+     ============================================================ -->
+<div id="tab-b2" class="tab-b-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Model Card 解剖台</h2>
+    <p class="text-gray-500 text-sm mb-4">點擊 Model Card 的每個段落，標記你認為它屬於哪個類別。看看你能不能找對重點！</p>
+
+    <!-- 模型選擇器 -->
+    <div class="flex gap-2 mb-4 flex-wrap" id="model-selector">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- 左：Model Card 文件閱讀器 -->
+        <div class="lg:col-span-2">
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                <div class="bg-gray-800 text-white px-4 py-3 flex items-center gap-2">
+                    <i class="fab fa-python text-yellow-400"></i>
+                    <span class="text-sm font-mono" id="model-card-title">選擇一個模型</span>
+                    <span class="ml-auto text-xs text-gray-400">Hugging Face Model Card（模擬）</span>
+                </div>
+                <div id="model-card-content" class="p-4 space-y-3 max-h-96 overflow-y-auto">
+                    <div class="text-center text-gray-400 py-8">
+                        <i class="fas fa-file-alt text-3xl mb-2"></i>
+                        <p class="text-sm">點擊上方選擇模型查看 Model Card</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右：標記類別 -->
+        <div>
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm mb-4">
+                <h3 class="text-sm font-bold text-gray-700 mb-3">標記類別（點擊段落後選擇）</h3>
+                <div class="space-y-2" id="label-buttons">
+                    <!-- 由 JS 渲染 -->
+                </div>
+            </div>
+            <div id="labeling-feedback" class="bg-purple-50 border border-purple-100 rounded-2xl p-4 hidden">
+                <h3 class="text-sm font-bold text-purple-700 mb-2">✨ 標記回饋</h3>
+                <div id="labeling-feedback-content" class="text-xs text-purple-600 space-y-1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     B-3: 模型 PK
+     ============================================================ -->
+<div id="tab-b3" class="tab-b-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">模型選型 PK 活動</h2>
+    <p class="text-gray-500 text-sm mb-4">任務情境固定，三個候選模型，你會選哪個？說出你的理由！</p>
+
+    <!-- 任務情境 -->
+    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center text-white text-sm">
+                <i class="fas fa-factory"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-orange-800 mb-1">任務情境：設備異常通報摘要系統</h3>
+                <div class="text-sm text-orange-700 space-y-1">
+                    <p>• 工廠設備異常訊息（繁體中文）→ 摘要 + 分類 + 嚴重程度</p>
+                    <p>• 輸出格式：<code class="bg-orange-100 px-1 rounded">JSON</code>（供 MES 系統串接）</p>
+                    <p>• 商業用途（對外提供服務）</p>
+                    <p>• GPU 預算有限（RTX 3090 x1 以內）</p>
+                    <p>• 每日約 300 次查詢</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三個候選模型卡 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="pk-model-cards">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 選型表單 -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-pen-to-square text-purple-500"></i>提交你的選型決策
+        </h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-2 block">你選擇的模型 *</label>
+                <div class="flex gap-3" id="pk-model-choice">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_A" class="accent-purple-500">
+                        <span class="text-sm">模型 A (Breeze-7B)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_B" class="accent-purple-500">
+                        <span class="text-sm">模型 B (Qwen2.5-14B)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="model-choice" value="MODEL_C" class="accent-purple-500">
+                        <span class="text-sm">模型 C (Phi-3-mini)</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    為何選它？<span class="text-red-400">*</span>
+                    <span class="text-gray-400 font-normal">（從 Model Card 找依據）</span>
+                </label>
+                <textarea id="reason-selected" rows="3" placeholder="例如：授權為 MIT、支援繁中、7B 可量化後在 RTX 3090 上運行..."
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    不選另外兩個的原因？
+                </label>
+                <textarea id="reason-rejected" rows="2" placeholder="例如：Model A 非商用授權有風險；Model B 硬體需求超出預算..."
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">風險評估</label>
+                <textarea id="risk-assessment" rows="2" placeholder="你選的模型有什麼已知限制或風險？"
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">下一步驗證方式</label>
+                <textarea id="next-steps" rows="2" placeholder="打算如何驗證這個選擇是正確的？（例如：小樣本測試、準確率門檻...）"
+                    class="w-full border rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"></textarea>
+            </div>
+            <button onclick="submitModelPK()" class="bg-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-600 transition flex items-center gap-2">
+                <i class="fas fa-paper-plane"></i>提交選型決策
+            </button>
+        </div>
+    </div>
+    <div id="pk-feedback" class="hidden mt-4 p-5 rounded-2xl border"></div>
+</div>
+
+<!-- ============================================================
+     B-4: 常見誤區
+     ============================================================ -->
+<div id="tab-b4" class="tab-b-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">常見誤區提醒</h2>
+    <p class="text-gray-500 text-sm mb-6">選型時最容易犯的 5 個錯誤，每一個都是真實代價！</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mistakes-grid-b">
+        <!-- 由 JS 渲染 -->
+    </div>
+</div>
+
+<!-- ============================================================
+     B-5: 小測驗
+     ============================================================ -->
+<div id="tab-b5" class="tab-b-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">單元 B 小測驗</h2>
+    <p class="text-gray-500 text-sm mb-6">5 道題，測驗你的模型選型決策能力</p>
+
+    <div id="quiz-container-b" class="space-y-6">
+        <!-- 由 JS 渲染 -->
+    </div>
+    <button id="quiz-submit-b" onclick="submitQuizB()" class="hidden mt-6 bg-purple-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-600 transition flex items-center gap-2">
+        <i class="fas fa-paper-plane"></i>提交測驗
+    </button>
+    <div id="quiz-result-b" class="hidden mt-4 p-5 rounded-2xl"></div>
+</div>
+
+</div>
+
+<!-- 資料傳遞 -->
+<script>
+var MODELS_DATA = [{"id": "MODEL_A", "name": "Breeze-7B-Instruct-v1_0", "display_name": "模型 A：MediaTek-Research/Breeze-7B-Instruct-v1_0", "hf_url": "https://huggingface.co/MediaTek-Research/Breeze-7B-Instruct-v1_0", "modality": "LLM（大型語言模型）", "license": "Apache 2.0（商業友善）", "intended_use": "由台灣聯發科技研究所開發，基於 Mistral-7B 針對繁體中文微調的指令跟隨模型。適合繁體中文問答、摘要、文件理解與對話任務。HuggingFace：MediaTek-Research/Breeze-7B-Instruct-v1_0", "out_of_scope": "高風險醫療／法律決策；需低於 1 秒即時回應的場景；工業設備術語密集任務（未進行工業微調）；英文複雜推理任務。", "evaluation": "TMMLU+（繁中專業評測）：45.54%；MMLU：59.66%；MT-Bench：7.57；ARC-Challenge：67.75%", "limitations": "訓練資料截止 2023 年；工廠設備術語、縮寫理解有限；偶有繁體中文語料偏誤；超長文檔（>32K tokens）表現下降。", "languages": "繁體中文（主要）、英文（中等）、簡體中文（基礎）", "deployment_requirements": "FP16：RTX 3090 24GB（約 14GB）；INT4 量化：RTX 3060 12GB（約 5GB）；支援 Ollama、vLLM、llama.cpp 部署", "parameters": "7B", "strengths": ["繁中表現最佳化（台灣在地開發）", "Apache 2.0 商業可用", "輕量易量化部署", "Context 32K tokens"], "weaknesses": ["工業術語未針對微調", "英文能力中等", "TMMLU+ 低於 70B 模型"]}, {"id": "MODEL_B", "name": "Qwen2.5-14B-Instruct", "display_name": "模型 B：Qwen/Qwen2.5-14B-Instruct", "hf_url": "https://huggingface.co/Qwen/Qwen2.5-14B-Instruct", "modality": "LLM（大型語言模型）", "license": "Apache 2.0（商業友善）", "intended_use": "阿里巴巴 Qwen2.5 系列通用指令模型。優化中文（繁／簡）與英文多輪對話、原生 JSON 結構化輸出、函數呼叫（Function Calling）與程式碼生成。HuggingFace：Qwen/Qwen2.5-14B-Instruct", "out_of_scope": "FP16 未量化時需 28GB VRAM，不適合單張 RTX 3090 直接部署；音訊、圖像任務需使用 Qwen2.5-VL 等多模態版本。", "evaluation": "MMLU：79.9%；C-Eval（簡中學術）：86.2%；CMMLU：83.6%；IFEval（指令跟隨）：80.4%；HumanEval（程式碼）：72.1%", "limitations": "FP16 推論需 ~28GB VRAM（超出 RTX 3090 24GB），需 INT4 量化至約 9GB；繁體中文表現略遜於簡體中文（訓練資料以簡中為主）；量化會損失部分精度。", "languages": "中文繁體／簡體（主要）、英文（主要）、日文、韓文等 29 種語言", "deployment_requirements": "FP16：需 A100 40GB 或 2×RTX 3090（~28GB）；INT4 量化：單張 RTX 3090 可運行（~9GB）；支援 vLLM、Ollama、LMDeploy", "parameters": "14.7B", "strengths": ["中文能力業界頂尖", "原生 JSON 結構化輸出", "128K 超長 Context", "Apache 2.0 商業授權"], "weaknesses": ["FP16 硬體需求高（需量化）", "繁中略遜簡中", "14.7B 推論延遲高於 7B"]}, {"id": "MODEL_C", "name": "Phi-3-mini-4k-instruct", "display_name": "模型 C：microsoft/Phi-3-mini-4k-instruct", "hf_url": "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct", "modality": "SLM（小型語言模型）", "license": "MIT License（完全商業友善）", "intended_use": "Microsoft Phi-3 系列輕量推理模型，針對英文邏輯推理與程式碼生成優化。適合邊緣裝置部署、資源受限環境與英文任務。HuggingFace：microsoft/Phi-3-mini-4k-instruct", "out_of_scope": "繁體中文或非英語任務（中文訓練資料極少）；需要長上下文場景（4K token 上限）；複雜多步驟工業推理（3.8B 參數限制）。", "evaluation": "MMLU：68.8%；MT-Bench：8.38（推理能力超越同量級模型）；HumanEval（程式碼）：58.9%；繁中任務：未官方測試（已知有限）", "limitations": "繁體中文訓練資料極少，中文輸出品質不穩定；Context Window 僅 4096 tokens；複雜工業推理任務容易出錯；輸出格式穩定性低於大模型。", "languages": "英文（主要）、部分歐洲語言（基礎）；中文支援非常有限", "deployment_requirements": "CPU 可推論（Intel i7+）；GPU：GTX 1080 Ti 即可（FP16 約 7.5GB）；INT4 約 2.5GB；支援邊緣裝置（Jetson、手機 NPU）", "parameters": "3.8B", "strengths": ["MIT 完全商業授權", "速度極快（最低延遲）", "資源需求最低", "CPU 推論 / 邊緣裝置部署"], "weaknesses": ["繁中能力極弱（不適合中文任務）", "Context 僅 4K tokens", "複雜推理準確率受限"]}];
+var B_QUIZZES_DATA = [{"id": "B_Q1", "unit": "B", "type": "single_choice", "question": "在 Model Card 中，哪個欄位最能判斷模型的商用風險？", "options": ["A. 模型架構（Architecture）", "B. 授權條款（License）", "C. 評估結果（Evaluation）", "D. 訓練資料來源"], "answer": "B", "explanation": "License 直接決定模型能否商業使用！許多開源模型有「非商用」限制，忽略這點可能引發法律風險。"}, {"id": "B_Q2", "unit": "B", "type": "single_choice", "question": "一個在英文排行榜上名列前茅的模型，一定適合用於中文工廠環境嗎？", "options": ["A. 是的，排行榜越高越好", "B. 不一定，需要看語言能力欄位，確認繁中表現", "C. 是的，參數量大就沒問題", "D. 不一定，但可以靠 Prompt 補救"], "answer": "B", "explanation": "排行榜通常是英文 benchmark！繁體中文的表現差異非常大，必須查看 Model Card 的語言支援章節，或用自己的資料做小樣本測試。"}, {"id": "B_Q3", "unit": "B", "type": "single_choice", "question": "Model Card 中「不適用場景（Out-of-scope uses）」欄位的主要用途是？", "options": ["A. 說明模型的最佳使用條件", "B. 幫助用戶了解模型的限制，避免在不適合的場景中部署", "C. 介紹模型的訓練資料", "D. 說明模型的硬體需求"], "answer": "B", "explanation": "了解模型的限制和不適用場景，可以避免在錯誤場景中部署，節省大量試錯成本。"}, {"id": "B_Q4", "unit": "B", "type": "matching", "question": "請配對 Model Card 欄位與其意義：", "pairs": [{"item": "Intended Use", "match": "模型設計的主要用途"}, {"item": "Limitations", "match": "模型已知的能力邊界與偏誤"}, {"item": "Training Data", "match": "模型訓練所用的資料集"}, {"item": "Evaluation Results", "match": "在標準測試集上的表現指標"}], "answer": "all_correct", "explanation": "理解 Model Card 各欄位是工程選型的必備技能！每個欄位都有其對應的決策意義。"}, {"id": "B_Q5", "unit": "B", "type": "scenario", "question": "工廠部署繁體中文設備異常摘要系統：需輸出 JSON、商業用途、預算內單張 RTX 3090（24GB）。以下何者最合理？", "options": ["A. 選 Breeze-7B-Instruct（Apache 2.0、繁中優化、7B FP16 約 14GB，RTX 3090 可直接運行）", "B. 選 Phi-3-mini（MIT 授權、速度最快，但繁中能力極弱）", "C. 選 Qwen2.5-14B（中文頂尖，但 FP16 需 28GB，超出單張 RTX 3090）", "D. 選英文排行榜第一的閉源 API（高準確率，但資料需外送，製程機密外洩風險）"], "answer": "A", "explanation": "Breeze-7B-Instruct 最合理：Apache 2.0 可商用、專為繁中優化、7B FP16 約 14GB 可在 RTX 3090（24GB）直接運行。Qwen2.5-14B 雖中文更強但 FP16 需 28GB 超出預算；Phi-3-mini 繁中能力不足；閉源 API 有製程資料外洩風險。"}];
+</script>
+<script src="./static/js/unit_b.js"></script>
+
+</main>
+
+<!-- 底部 -->
+<footer class="bg-gray-900 text-gray-500 text-center py-4 mt-12 text-xs">
+    <p>🎓生成式 AI 實務決策流程教學平台</p>
+</footer>
+
+<!-- 姓名設定 Modal -->
+<div id="name-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-user-edit text-blue-500 mr-2"></i>設定你的名稱
+        </h3>
+        <input type="text" id="name-input" placeholder="輸入你的姓名或學號"
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4">
+        <div class="flex gap-2">
+            <button onclick="saveName()" class="flex-1 bg-blue-500 text-white rounded-lg py-2 text-sm hover:bg-blue-600 transition">
+                確定
+            </button>
+            <button onclick="hideNameModal()" class="flex-1 bg-gray-100 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-200 transition">
+                取消
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示 Toast -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm hidden z-50 max-w-xs">
+    <div class="flex items-center gap-2">
+        <span id="toast-icon">✅</span>
+        <span id="toast-msg">操作成功</span>
+    </div>
+</div>
+
+<!-- Main JS -->
+<script src="./static/js/main.js"></script>
+
+
+
+<script>
+// 初始化全域進度條
+$(document).ready(function() {
+    $.get('/api/progress', function(data) {
+        var completed = data.badges.filter(b => b.earned).length;
+        var pct = Math.min(completed / 4 * 100, 100);
+        $('#global-progress-bar').css('width', pct + '%');
+    });
+
+    // 初始化模式標籤
+    var mode = 'guided';
+    updateModeUI(mode);
+});
+
+function showNameModal() {
+    var current = $('#nav-username').text();
+    $('#name-input').val(current !== '設定姓名' ? current : '');
+    $('#name-modal').removeClass('hidden');
+    setTimeout(() => $('#name-input').focus(), 100);
+}
+function hideNameModal() { $('#name-modal').addClass('hidden'); }
+function saveName() {
+    var name = $('#name-input').val().trim();
+    if (!name) return;
+    $.ajax({ url: '/set-name', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({name: name}),
+        success: function() {
+            $('#nav-username').text(name);
+            hideNameModal();
+            showToast('✅', '姓名已更新：' + name);
+        }
+    });
+}
+
+function updateModeUI(mode) {
+    if (mode === 'challenge') {
+        $('#mode-icon').html('<i class="fas fa-bolt text-yellow-400"></i>');
+        $('#mode-label').text('挑戰模式');
+        $('.hint-box').addClass('hidden');
+    } else {
+        $('#mode-icon').html('<i class="fas fa-graduation-cap text-blue-400"></i>');
+        $('#mode-label').text('教學模式');
+        $('.hint-box').removeClass('hidden');
+    }
+}
+
+$('#mode-toggle').click(function() {
+    var current = $(this).data('mode') || 'guided';
+    var next = current === 'guided' ? 'challenge' : 'guided';
+    $(this).data('mode', next);
+    $.ajax({ url: '/set-mode', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({mode: next}),
+        success: function() {
+            updateModeUI(next);
+            showToast('🔄', next === 'challenge' ? '已切換至挑戰模式（提示已隱藏）' : '已切換至教學模式');
+        }
+    });
+});
+</script>
+
+</body>
+</html>

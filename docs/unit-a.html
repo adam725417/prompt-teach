@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單元 A：Prompt 核心原理 | 生成式 AI 實務決策流程</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'unit-a': '#3B82F6',
+                        'unit-b': '#8B5CF6',
+                        'unit-c': '#10B981',
+                        'unit-case': '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="./static/js/static-override.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./static/css/custom.css">
+
+    
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- 頂部導覽列 -->
+<nav class="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-14">
+            <!-- Logo -->
+            <a href="./index.html" class="flex items-center gap-2 hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <span class="font-bold text-sm hidden sm:block">生成式 AI 實務決策</span>
+                <span class="font-bold text-sm sm:hidden">AI 教學</span>
+            </a>
+
+            <!-- 單元導覽 -->
+            <div class="flex items-center gap-1 text-xs">
+                <a href="./unit-a.html" class="nav-unit px-2 py-1 rounded-md hover:bg-blue-600 transition flex items-center gap-1
+                    bg-blue-600">
+                    <span class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center text-xs font-bold">A</span>
+                    <span class="hidden md:inline">Prompt</span>
+                </a>
+                <a href="./unit-b.html" class="nav-unit px-2 py-1 rounded-md hover:bg-purple-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs font-bold">B</span>
+                    <span class="hidden md:inline">模型選型</span>
+                </a>
+                <a href="./unit-c.html" class="nav-unit px-2 py-1 rounded-md hover:bg-green-600 transition flex items-center gap-1
+                    ">
+                    <span class="w-4 h-4 bg-green-500 rounded text-white flex items-center justify-center text-xs font-bold">C</span>
+                    <span class="hidden md:inline">部署選型</span>
+                </a>
+            </div>
+
+            <!-- 右側工具 -->
+            <div class="flex items-center gap-2">
+                <!-- 模式切換 -->
+                <div id="mode-toggle" class="flex items-center gap-1 text-xs cursor-pointer" title="切換教學模式">
+                    <span id="mode-icon" class="text-yellow-400"><i class="fas fa-graduation-cap"></i></span>
+                    <span id="mode-label" class="hidden sm:inline text-gray-300">教學模式</span>
+                </div>
+                <!-- 學生姓名 -->
+                <button onclick="showNameModal()" class="text-gray-400 hover:text-white transition text-xs flex items-center gap-1">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="nav-username" class="hidden sm:inline">設定姓名</span>
+                </button>
+                <!-- 教師模式 -->
+                <a href="#" class="text-gray-500 hover:text-gray-300 transition text-xs" title="教師面板">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 進度條（頂部細線）-->
+<div class="h-1 bg-gray-200">
+    <div id="global-progress-bar" class="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 transition-all duration-500"
+         style="width: 0%"></div>
+</div>
+
+<!-- 主內容 -->
+<main class="max-w-7xl mx-auto px-4 py-6">
+    
+<!-- 單元標題 -->
+<div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-6 px-4 -mx-4 -mt-6 mb-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-4">
+        <div class="w-12 h-12 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center text-2xl font-black">A</div>
+        <div>
+            <div class="text-blue-200 text-xs mb-0.5">單元 A</div>
+            <h1 class="text-2xl font-black">Prompt 核心原理</h1>
+            <p class="text-blue-200 text-sm">「你以為是 prompt 不夠長，其實是任務定義不夠清楚」</p>
+        </div>
+        <div class="ml-auto hidden md:block">
+            <div class="text-xs text-blue-200">包含</div>
+            <div class="text-sm font-bold">6 個模組 · 5 題測驗 · 2 個互動練習</div>
+        </div>
+    </div>
+</div>
+
+<!-- 分頁導覽 -->
+<div class="max-w-6xl mx-auto mb-6">
+    <div class="flex flex-wrap gap-2 bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+        
+        
+        <button onclick="showTab('a1')"
+            id="tab-btn-a1"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   bg-blue-500 text-white shadow">
+            <i class="fas fa-layer-group text-xs"></i>五要素
+        </button>
+        
+        <button onclick="showTab('a15')"
+            id="tab-btn-a15"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-sitemap text-xs"></i>角色結構
+        </button>
+        
+        <button onclick="showTab('a2')"
+            id="tab-btn-a2"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-pen-nib text-xs"></i>改寫遊戲
+        </button>
+        
+        <button onclick="showTab('a3')"
+            id="tab-btn-a3"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-code-compare text-xs"></i>對比實驗
+        </button>
+        
+        <button onclick="showTab('a4')"
+            id="tab-btn-a4"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-triangle-exclamation text-xs"></i>常見誤區
+        </button>
+        
+        <button onclick="showTab('a5')"
+            id="tab-btn-a5"
+            class="tab-btn flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all
+                   text-gray-500 hover:bg-gray-100">
+            <i class="fas fa-clipboard-question text-xs"></i>小測驗
+        </button>
+        
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto space-y-4">
+
+<!-- ============================================================
+     A-1: Prompt 五要素
+     ============================================================ -->
+<div id="tab-a1" class="tab-content ">
+
+    <!-- 教學提示 -->
+    <div class="hint-box bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-sm text-blue-700 flex items-start gap-2">
+        <i class="fas fa-circle-info mt-0.5 text-blue-500"></i>
+        <div><strong>教學提示：</strong>點擊每個要素卡片，查看定義、工廠場景範例，以及好/壞寫法比較。完成後進入「改寫遊戲」實際練習！</div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Prompt 五要素</h2>
+    <p class="text-gray-500 text-sm mb-4">Prompt 不是咒語，是工程設計。五個要素缺一不可，每個都有明確的工程意義。</p>
+
+    <!-- 五要素卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="elements-grid">
+    </div>
+
+    <!-- 完整 Prompt 範例 -->
+    <div class="mt-6 bg-gray-900 rounded-2xl p-5 text-white">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm flex items-center gap-2">
+                <i class="fas fa-code text-blue-400"></i>整合範例：包含五要素的完整 Prompt
+            </h3>
+            <span class="text-xs text-green-400 bg-green-400 bg-opacity-10 px-2 py-1 rounded-full">⭐ 建議寫法</span>
+        </div>
+        <pre class="text-xs font-mono text-gray-300 whitespace-pre-wrap leading-6">
+<span class="text-yellow-400">[目標 Goal]</span>
+你是工廠設備工程師，請分析以下機台異常訊息，判斷嚴重程度與可能原因。
+
+<span class="text-blue-400">[資料 Context]</span>
+機台ID: WE-27
+班別: 早班
+異常訊息: 收線張力波動超過 ±15%，已連續發生 3 次
+最近維修紀錄: 2週前更換收線滾輪
+
+<span class="text-purple-400">[規則 Constraints]</span>
+- 若資料不足，請回覆「資料不足，無法判斷」，不可捏造
+- 可能原因最多列 3 項，按機率排序
+- 使用繁體中文回覆
+
+<span class="text-green-400">[格式 Output Format]</span>
+以 JSON 格式輸出：
+{"summary": "50字內摘要", "severity": "高/中/低", "possible_causes": [], "action": "建議行動"}
+
+<span class="text-orange-400">[評估 Evaluation]</span>
+好的回應：格式正確、摘要精準、原因具體可操作
+差的回應：含糊描述、超出3項原因、格式不符</pre>
+    </div>
+
+    <button onclick="showTab('a15')" class="mt-4 bg-blue-500 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-600 transition flex items-center gap-2">
+        下一步：Prompt 角色結構 <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
+
+<!-- ============================================================
+     A-1.5: Prompt 角色結構（System / User / Assistant）
+     ============================================================ -->
+<div id="tab-a15" class="tab-content hidden">
+
+    <div class="hint-box bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4 text-sm text-purple-700 flex items-start gap-2">
+        <i class="fas fa-circle-info mt-0.5"></i>
+        <div><strong>教學提示：</strong>同一句話，放在不同角色位置，效果可以差很多！先看角色卡片，再做拖拉分類練習。</div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Prompt 角色結構</h2>
+    <p class="text-gray-500 text-sm mb-6">在實務上，Prompt 不只是「一段文字」，而是由三種角色訊息組成的結構</p>
+
+    <!-- 角色卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" id="role-cards-grid">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 版本比較實驗 -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <h3 class="font-bold text-gray-800 mb-1 flex items-center gap-2">
+            <i class="fas fa-flask text-blue-500"></i>同題比較實驗：只改角色分配，看輸出差異
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">任務相同：設備異常摘要。只是訊息放的「位置」不同，結果天差地遠。</p>
+
+        <!-- 版本選擇按鈕 -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="showRoleVersion('A')" id="rv-btn-A" class="rv-btn px-4 py-2 rounded-xl text-sm border-2 border-red-400 bg-red-50 text-red-600 font-medium">版本A：全塞 User</button>
+            <button onclick="showRoleVersion('B')" id="rv-btn-B" class="rv-btn px-4 py-2 rounded-xl text-sm border-2 border-gray-200 text-gray-500 hover:border-yellow-400 hover:text-yellow-600">版本B：System + User</button>
+            <button onclick="showRoleVersion('C')" id="rv-btn-C" class="rv-btn px-4 py-2 rounded-xl text-sm border-2 border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600">版本C：三層分離 ✨</button>
+        </div>
+
+        <!-- 版本內容 -->
+        <div id="role-version-display">
+            <!-- 由 JS 渲染 -->
+        </div>
+    </div>
+
+    <!-- 拖拉分類練習 -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <h3 class="font-bold text-gray-800 mb-1 flex items-center gap-2">
+            <i class="fas fa-hand-pointer text-orange-500"></i>拖拉分類練習
+            <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">核心互動</span>
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">把下方每個 Prompt 片段，拖拉到正確的角色欄位。可以點選後再點目標欄位（適合觸控裝置）。</p>
+
+        <!-- 待分類片段 -->
+        <div class="mb-4">
+            <div class="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">待分類的 Prompt 片段</div>
+            <div id="fragments-pool" class="flex flex-wrap gap-2 min-h-12 p-3 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <!-- 由 JS 渲染 -->
+            </div>
+        </div>
+
+        <!-- 三個角色欄位 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="drop-zone rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 min-h-24 p-3" id="zone-system" data-role="system">
+                <div class="text-xs font-bold text-blue-600 mb-2 flex items-center gap-1">
+                    <i class="fas fa-shield-halved"></i> System Prompt
+                    <span class="font-normal text-blue-400">（規則/SOP）</span>
+                </div>
+                <div class="drop-target text-xs text-blue-300 text-center py-2">拖拉至此</div>
+            </div>
+            <div class="drop-zone rounded-xl border-2 border-dashed border-green-300 bg-green-50 min-h-24 p-3" id="zone-user" data-role="user">
+                <div class="text-xs font-bold text-green-600 mb-2 flex items-center gap-1">
+                    <i class="fas fa-user"></i> User Prompt
+                    <span class="font-normal text-green-400">（本次工單）</span>
+                </div>
+                <div class="drop-target text-xs text-green-300 text-center py-2">拖拉至此</div>
+            </div>
+            <div class="drop-zone rounded-xl border-2 border-dashed border-purple-300 bg-purple-50 min-h-24 p-3" id="zone-assistant" data-role="assistant">
+                <div class="text-xs font-bold text-purple-600 mb-2 flex items-center gap-1">
+                    <i class="fas fa-robot"></i> Assistant Message
+                    <span class="font-normal text-purple-400">（示範/紀錄）</span>
+                </div>
+                <div class="drop-target text-xs text-purple-300 text-center py-2">拖拉至此</div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="checkRoleAnswers()" class="bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-600 transition flex items-center gap-2">
+                <i class="fas fa-check"></i>提交答案
+            </button>
+            <button onclick="resetRoleExercise()" class="bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl text-sm hover:bg-gray-200 transition">
+                重置
+            </button>
+        </div>
+
+        <!-- 回饋區域 -->
+        <div id="role-feedback" class="hidden mt-4 p-4 rounded-xl bg-gray-50 border"></div>
+    </div>
+
+    <!-- 角色版誤區提醒 -->
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-4">
+        <h3 class="font-bold text-amber-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation text-amber-500"></i>⚠ 常見誤區（角色結構）
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="role-mistakes-grid">
+            <!-- 由 JS 渲染 -->
+        </div>
+    </div>
+
+    <!-- 角色分層模板 -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-table-columns text-blue-500"></i>Prompt 角色分層設計模板
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="text-left p-3 rounded-tl-lg text-gray-600">要素</th>
+                        <th class="text-left p-3 text-blue-600 bg-blue-50">System</th>
+                        <th class="text-left p-3 text-green-600 bg-green-50">User</th>
+                        <th class="text-left p-3 rounded-tr-lg text-purple-600 bg-purple-50">Assistant</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-gray-600">
+                    <tr class="border-b border-gray-50">
+                        <td class="p-3 font-medium">目標 Goal</td>
+                        <td class="p-3 bg-blue-50">角色設定<br>「你是工廠助理」</td>
+                        <td class="p-3 bg-green-50">本次任務描述<br>「請分析以下異常」</td>
+                        <td class="p-3 bg-purple-50 text-gray-400">—</td>
+                    </tr>
+                    <tr class="border-b border-gray-50">
+                        <td class="p-3 font-medium">資料 Context</td>
+                        <td class="p-3 bg-blue-50 text-gray-400">—</td>
+                        <td class="p-3 bg-green-50">本次輸入資料<br>機台ID、異常訊息</td>
+                        <td class="p-3 bg-purple-50">歷史相關資料<br>（可選）</td>
+                    </tr>
+                    <tr class="border-b border-gray-50">
+                        <td class="p-3 font-medium">規則 Constraints</td>
+                        <td class="p-3 bg-blue-50">不可違反規則<br>「不可捏造」「繁中」</td>
+                        <td class="p-3 bg-green-50">本次特殊限制<br>（可選）</td>
+                        <td class="p-3 bg-purple-50 text-gray-400">—</td>
+                    </tr>
+                    <tr class="border-b border-gray-50">
+                        <td class="p-3 font-medium">格式 Output Format</td>
+                        <td class="p-3 bg-blue-50">全局格式規範<br>「輸出必須是 JSON」</td>
+                        <td class="p-3 bg-green-50 text-gray-400">—</td>
+                        <td class="p-3 bg-purple-50">格式示範<br>few-shot 範例</td>
+                    </tr>
+                    <tr>
+                        <td class="p-3 font-medium">評估 Evaluation</td>
+                        <td class="p-3 bg-blue-50">評分標準<br>（如有）</td>
+                        <td class="p-3 bg-green-50 text-gray-400">—</td>
+                        <td class="p-3 bg-purple-50">正確/錯誤範例<br>（用於 few-shot）</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 角色小測驗 -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" id="role-quiz-section">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-clipboard-question text-blue-500"></i>角色結構小測驗（5題）
+        </h3>
+        <div id="role-quiz-container">
+            <!-- 由 JS 渲染 -->
+        </div>
+        <button onclick="submitRoleQuiz()" class="mt-4 bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-600 transition hidden" id="role-quiz-submit">
+            提交測驗
+        </button>
+        <div id="role-quiz-result" class="hidden mt-4 p-4 rounded-xl"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     A-2: Prompt 改寫遊戲
+     ============================================================ -->
+<div id="tab-a2" class="tab-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">Prompt 改寫遊戲</h2>
+    <p class="text-gray-500 text-sm mb-4">看到一個模糊的 Prompt，你能把它改成可執行的版本嗎？</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 左側：原始 Prompt -->
+        <div>
+            <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded font-bold">❌ 壞 Prompt</span>
+                </div>
+                <p class="text-gray-700 font-mono text-sm bg-white rounded-lg p-3 border border-red-100" id="bad-prompt-display">
+                    幫我分析這些異常
+                </p>
+                <p class="text-xs text-red-500 mt-2">問題：沒有目標、沒有資料、沒有格式要求……什麼都沒有！</p>
+            </div>
+
+            <!-- 提示標籤 -->
+            <div class="hint-box">
+                <div class="text-xs text-gray-500 mb-2 font-medium">💡 拖拉提示標籤到下方 Prompt 中（點選也可以）</div>
+                <div id="hint-tags" class="flex flex-wrap gap-2">
+                    <!-- 由 JS 渲染 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：改寫區 -->
+        <div>
+            <div class="bg-green-50 border border-green-200 rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="bg-green-500 text-white text-xs px-2 py-0.5 rounded font-bold">✏️ 你的改寫</span>
+                    <div class="flex gap-1 flex-wrap">
+                        <span id="flag-goal" class="flag-badge text-xs px-2 py-0.5 rounded-full border border-blue-200 text-gray-400">目標</span>
+                        <span id="flag-context" class="flag-badge text-xs px-2 py-0.5 rounded-full border border-blue-200 text-gray-400">資料</span>
+                        <span id="flag-constraints" class="flag-badge text-xs px-2 py-0.5 rounded-full border border-blue-200 text-gray-400">規則</span>
+                        <span id="flag-format" class="flag-badge text-xs px-2 py-0.5 rounded-full border border-blue-200 text-gray-400">格式</span>
+                        <span id="flag-eval" class="flag-badge text-xs px-2 py-0.5 rounded-full border border-blue-200 text-gray-400">評估</span>
+                    </div>
+                </div>
+                <textarea id="improved-prompt" rows="10" placeholder="在這裡改寫你的 Prompt...
+
+提示：試著補充：
+- 角色設定（你是...）
+- 任務說明（請分析/輸出...）
+- 輸入資料（機台ID、異常訊息）
+- 格式要求（JSON / 清單 / 摘要）
+- 規則限制（不可捏造、字數限制）"
+                    class="w-full bg-white border border-green-100 rounded-xl p-3 text-sm font-mono text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-green-300"
+                    oninput="analyzePrompt(this.value)">
+                </textarea>
+            </div>
+
+            <!-- 即時評分 -->
+            <div class="mt-3 bg-white border border-gray-100 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-gray-600 font-medium">即時評分</span>
+                    <span id="prompt-score-display" class="text-xl font-black text-gray-300">0 / 100</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
+                    <div id="prompt-score-bar" class="h-2 rounded-full transition-all duration-500 bg-gray-300" style="width: 0%"></div>
+                </div>
+                <div id="prompt-score-hint" class="text-xs text-gray-400">開始輸入 Prompt，系統會即時分析五要素是否完整</div>
+            </div>
+
+            <div class="flex gap-3 mt-3">
+                <button onclick="submitPromptExercise()" class="flex-1 bg-blue-500 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-600 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i>提交並取得 AI 助教回饋
+                </button>
+                <button onclick="loadExample()" class="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl text-sm hover:bg-gray-200 transition">
+                    範例
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 助教回饋區 -->
+    <div id="a2-feedback" class="hidden mt-4 p-5 rounded-2xl border">
+        <h3 class="font-bold mb-2 flex items-center gap-2">
+            <i class="fas fa-robot"></i>AI 助教回饋
+        </h3>
+        <div id="a2-feedback-content"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     A-3: 同題對比實驗
+     ============================================================ -->
+<div id="tab-a3" class="tab-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">同題對比實驗</h2>
+    <p class="text-gray-500 text-sm mb-6">同一個任務，四個不同版本的 Prompt，輸出結果差異有多大？切換看看！</p>
+
+    <!-- 版本選擇器 -->
+    <div class="flex flex-wrap gap-2 mb-4" id="version-tabs">
+        <!-- 由 JS 渲染 -->
+    </div>
+
+    <!-- 版本顯示 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+            <div class="text-xs text-gray-500 mb-2 font-medium flex items-center gap-1">
+                <i class="fas fa-terminal"></i> Prompt 內容
+            </div>
+            <div id="version-prompt-display" class="bg-gray-900 rounded-2xl p-4 text-gray-300 text-sm font-mono whitespace-pre-wrap min-h-40">
+            </div>
+            <div id="version-issues" class="mt-3 flex flex-wrap gap-2">
+            </div>
+        </div>
+        <div>
+            <div class="text-xs text-gray-500 mb-2 font-medium flex items-center gap-1">
+                <i class="fas fa-comment"></i> 模型輸出（模擬）
+            </div>
+            <div id="version-output-display" class="bg-blue-50 rounded-2xl p-4 text-gray-700 text-sm font-mono whitespace-pre-wrap min-h-40 border border-blue-100">
+            </div>
+            <div id="version-score" class="mt-3 flex items-center gap-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析圖表 -->
+    <div class="mt-6 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+        <h3 class="font-bold text-sm text-gray-700 mb-3">四版本評分比較</h3>
+        <canvas id="version-chart" height="80"></canvas>
+    </div>
+</div>
+
+<!-- ============================================================
+     A-4: 常見誤區
+     ============================================================ -->
+<div id="tab-a4" class="tab-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">常見誤區提醒</h2>
+    <p class="text-gray-500 text-sm mb-6">這些誤區 80% 的人都踩過，現在看到了就不會再犯！</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mistakes-grid-a">
+        <!-- 由 JS 渲染 -->
+    </div>
+</div>
+
+<!-- ============================================================
+     A-5: 小測驗
+     ============================================================ -->
+<div id="tab-a5" class="tab-content hidden">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-2">單元 A 小測驗</h2>
+    <p class="text-gray-500 text-sm mb-6">5 道題，測測你對 Prompt 核心原理的掌握程度</p>
+
+    <div id="quiz-container-a" class="space-y-6">
+        <!-- 由 JS 渲染 -->
+    </div>
+    <button id="quiz-submit-a" onclick="submitQuiz('A')" class="hidden mt-6 bg-blue-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-600 transition flex items-center gap-2">
+        <i class="fas fa-paper-plane"></i>提交測驗
+    </button>
+    <div id="quiz-result-a" class="hidden mt-4 p-5 rounded-2xl"></div>
+</div>
+
+</div><!-- end max-w-6xl -->
+
+<!-- 資料傳遞 -->
+<script>
+var PROMPT_VERSIONS_DATA = {"task": "設備異常摘要", "versions": [{"version": "v0", "label": "Prompt v0（模糊）", "prompt": "幫我分析這些異常", "output": "好的，這個異常看起來很嚴重。您需要聯繫維修部門並檢查相關設備。建議立即停機檢查。另外也要注意安全...", "issues": ["任務不明確", "無格式要求", "無法自動解析", "輸出不穩定"], "score": 20}, {"version": "v1", "label": "Prompt v1（有目標）", "prompt": "你是設備工程師。以下是機台異常訊息，請分析原因：\n機台ID: WE-27，訊息: 收線張力波動超過 ±15%", "output": "這台機器（WE-27）出現了收線張力波動的問題，超過了 ±15% 的正常範圍。可能原因有幾個：1. 張力感測器故障 2. 收線機構磨損 3. 原料特性變化。建議先檢查感測器...", "issues": ["有角色設定", "但無輸出格式", "難以自動串接", "輸出長度不可控"], "score": 50}, {"version": "v2", "label": "Prompt v2（加格式）", "prompt": "你是設備工程師。請分析以下機台異常訊息，並以 JSON 格式輸出：\n{\"summary\": \"摘要\", \"severity\": \"高/中/低\", \"possible_causes\": []}\n\n機台ID: WE-27，訊息: 收線張力波動超過 ±15%", "output": "{\"summary\": \"WE-27 收線張力波動，超過正常範圍 ±15%\", \"severity\": \"中\", \"possible_causes\": [\"張力感測器異常\", \"收線機構磨損\", \"原料張力特性變化\"]}", "issues": ["格式明確", "可自動解析", "但無規則限制"], "score": 75}, {"version": "v3", "label": "Prompt v3（完整版）", "prompt": "[System]\n你是工廠值班助理，回答必須簡潔準確，使用繁體中文。若資料不足請回覆資料不足，不可捏造。\n\n[User]\n請分析以下機台異常訊息，以 JSON 輸出：\n{\"summary\": \"50字內摘要\", \"severity\": \"高/中/低\", \"possible_causes\": [\"最多3項\"], \"action\": \"建議處理動作\"}\n\n機台ID: WE-27；班別: 早班；訊息: 收線張力波動超過 ±15%，已連續發生3次", "output": "{\"summary\": \"WE-27 早班出現收線張力反覆波動，已連續 3 次超過 ±15% 閾值，需立即排查\", \"severity\": \"高\", \"possible_causes\": [\"張力感測器漂移\", \"收線滾輪磨損\", \"原料批次張力特性差異\"], \"action\": \"暫停生產，更換感測器後重新校準，確認連續5件張力正常後復線\"}", "issues": [], "score": 95}]};
+var FRAGMENTS_DATA = [{"id": "RF1", "text": "你是工廠值班助理，回答必須簡潔、準確，使用繁體中文", "correct_role": "system", "explanation": "這是角色設定與語言規範，屬於高層規則，放在 System Prompt"}, {"id": "RF2", "text": "請根據以下異常訊息產生摘要與嚴重程度分類", "correct_role": "user", "explanation": "這是本次任務描述，屬於 User Prompt"}, {"id": "RF3", "text": "若資料不足請回覆「資料不足，無法判斷」，不可捏造", "correct_role": "system", "explanation": "這是不可違反的規則，屬於 System Prompt 的約束條件"}, {"id": "RF4", "text": "輸出格式範例：{\"summary\": \"...\", \"severity\": \"高/中/低\"}", "correct_role": "assistant", "explanation": "這是格式示範，作為 few-shot 範例放在 Assistant Message"}, {"id": "RF5", "text": "機台ID: WE-27；異常訊息: 收線張力波動超過 ±15%", "correct_role": "user", "explanation": "這是本次任務的輸入資料，屬於 User Prompt"}, {"id": "RF6", "text": "回覆必須在 150 字以內，不得包含個人意見", "correct_role": "system", "explanation": "字數限制與格式規範屬於 System Prompt 的約束條件"}, {"id": "RF7", "text": "User: 機台A溫度過高\nAssistant: {\"summary\": \"主軸溫度超標\", \"severity\": \"高\"}", "correct_role": "assistant", "explanation": "這是一個完整的 few-shot 範例對話，放在 Assistant Message"}, {"id": "RF8", "text": "請分析以下三筆異常紀錄並按嚴重程度排序", "correct_role": "user", "explanation": "這是具體任務要求，屬於 User Prompt"}];
+var ROLE_QUIZZES_DATA = [{"id": "A_ROLE_Q1", "unit": "A_role", "type": "single_choice", "question": "以下哪種內容最適合放在 System Prompt？", "options": ["A. 本次要分析的設備異常訊息", "B. 輸出必須是 JSON 格式、不可捏造資料的規則", "C. 希望 AI 給出三種可能原因", "D. 具體的機台編號與時間戳"], "answer": "B", "explanation": "System Prompt 是「高層規則 / SOP」，適合放置不變的規則、格式要求、角色設定。本次任務的具體資料應放在 User Prompt。"}, {"id": "A_ROLE_Q2", "unit": "A_role", "type": "single_choice", "question": "為什麼 Assistant Message（示範訊息）會影響輸出格式穩定性？", "options": ["A. 因為它讓模型知道系統時間", "B. 因為模型會模仿歷史回覆的格式與風格", "C. 因為它提高了 token 使用量", "D. 因為它改變了 temperature 設定"], "answer": "B", "explanation": "模型會學習並模仿 Assistant Message 的格式、語氣與結構，這是 few-shot 學習的核心機制。"}, {"id": "A_ROLE_Q3", "unit": "A_role", "type": "single_choice", "question": "小明把所有的規則、資料、示範全部塞進 User Prompt，結果格式不穩定。最可能的原因是？", "options": ["A. 模型版本太舊", "B. 沒有分層結構，模型無法區分「規則」與「任務」的優先順序", "C. User Prompt 太短", "D. 沒有使用英文撰寫"], "answer": "B", "explanation": "把所有內容都塞在 User Prompt 是最常見的誤區！分層結構讓模型清楚知道哪些是不變規則（System），哪些是本次任務（User），哪些是格式參考（Assistant）。"}, {"id": "A_ROLE_Q4", "unit": "A_role", "type": "true_false", "question": "在多輪對話中，舊的 Assistant 訊息（歷史回覆）不會影響後續輸出。", "answer": "false", "explanation": "錯！歷史 Assistant 訊息會被包含在 context window 中，模型會參考它們。若早期回覆格式混亂，後續輸出也可能跟著走偏，這叫「對話歷史污染」。"}, {"id": "A_ROLE_Q5", "unit": "A_role", "type": "single_choice", "question": "以下哪種情境最適合使用 Assistant Message 的 few-shot 示範？", "options": ["A. 我希望 AI 給出創意發揮的回答", "B. 我需要 AI 輸出嚴格的 JSON 格式，且格式必須高度一致", "C. 我不在意輸出格式，只要有答案就好", "D. 我想讓 AI 用自己的方式表達"], "answer": "B", "explanation": "當需要高度格式一致性時，提供 Assistant Message 示範是最有效的方法。模型會直接模仿範例的結構輸出。"}];
+var A_QUIZZES_DATA = [{"id": "A_Q1", "unit": "A", "type": "true_false", "question": "Prompt 就是跟 AI 說話，越長越好，資訊越多越好。", "answer": "false", "explanation": "錯！Prompt 的關鍵不是長度，而是結構清楚、任務明確。雜亂的長 Prompt 反而讓模型抓不到重點。"}, {"id": "A_Q2", "unit": "A", "type": "single_choice", "question": "下列哪一項是 Prompt 設計中最常被忽略但最重要的要素？", "options": ["A. 目標（Goal）", "B. 輸出格式（Output Format）", "C. 資料長度", "D. 模型版本"], "answer": "B", "explanation": "輸出格式最常被忽略！若不指定格式，後端系統無法自動解析回應，導致整個串接流程失敗。"}, {"id": "A_Q3", "unit": "A", "type": "single_choice", "question": "以下哪種寫法最符合「好的 Prompt」原則？", "options": ["A. 幫我分析這台機器的問題", "B. 你是設備工程師，請根據以下異常訊息，輸出 JSON 格式的摘要與嚴重程度分類（高/中/低）", "C. 這台機器怎麼了？告訴我", "D. 詳細分析設備異常狀況並給出所有可能原因"], "answer": "B", "explanation": "選項 B 包含角色設定、任務來源、輸出格式要求，是結構完整的 Prompt 設計。"}, {"id": "A_Q4", "unit": "A", "type": "ordering", "question": "請將以下 Prompt 設計步驟排成正確順序：", "items": ["定義輸出格式", "設定評估標準", "明確任務目標", "提供背景資料", "加入規則與限制"], "answer": ["明確任務目標", "提供背景資料", "加入規則與限制", "定義輸出格式", "設定評估標準"], "explanation": "Prompt 設計的黃金順序：目標→資料→規則→格式→評估，層層遞進讓模型有完整的行動指南。"}, {"id": "A_Q5", "unit": "A", "type": "true_false", "question": "在 Prompt 設計中，「評估標準」只是選填項目，不影響實際效果。", "answer": "false", "explanation": "錯！沒有評估標準，你無法知道 Prompt 有沒有變好。評估是迭代改進的基礎，工程思維不能省略。"}];
+</script>
+<script src="./static/js/unit_a.js"></script>
+
+
+</main>
+
+<!-- 底部 -->
+<footer class="bg-gray-900 text-gray-500 text-center py-4 mt-12 text-xs">
+    <p>🎓生成式 AI 實務決策流程教學平台</p>
+</footer>
+
+<!-- 姓名設定 Modal -->
+<div id="name-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-user-edit text-blue-500 mr-2"></i>設定你的名稱
+        </h3>
+        <input type="text" id="name-input" placeholder="輸入你的姓名或學號"
+            class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 mb-4">
+        <div class="flex gap-2">
+            <button onclick="saveName()" class="flex-1 bg-blue-500 text-white rounded-lg py-2 text-sm hover:bg-blue-600 transition">
+                確定
+            </button>
+            <button onclick="hideNameModal()" class="flex-1 bg-gray-100 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-200 transition">
+                取消
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示 Toast -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm hidden z-50 max-w-xs">
+    <div class="flex items-center gap-2">
+        <span id="toast-icon">✅</span>
+        <span id="toast-msg">操作成功</span>
+    </div>
+</div>
+
+<!-- Main JS -->
+<script src="./static/js/main.js"></script>
+
+
+
+<script>
+// 初始化全域進度條
+$(document).ready(function() {
+    $.get('/api/progress', function(data) {
+        var completed = data.badges.filter(b => b.earned).length;
+        var pct = Math.min(completed / 4 * 100, 100);
+        $('#global-progress-bar').css('width', pct + '%');
+    });
+
+    // 初始化模式標籤
+    var mode = 'guided';
+    updateModeUI(mode);
+});
+
+function showNameModal() {
+    var current = $('#nav-username').text();
+    $('#name-input').val(current !== '設定姓名' ? current : '');
+    $('#name-modal').removeClass('hidden');
+    setTimeout(() => $('#name-input').focus(), 100);
+}
+function hideNameModal() { $('#name-modal').addClass('hidden'); }
+function saveName() {
+    var name = $('#name-input').val().trim();
+    if (!name) return;
+    $.ajax({ url: '/set-name', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({name: name}),
+        success: function() {
+            $('#nav-username').text(name);
+            hideNameModal();
+            showToast('✅', '姓名已更新：' + name);
+        }
+    });
+}
+
+function updateModeUI(mode) {
+    if (mode === 'challenge') {
+        $('#mode-icon').html('<i class="fas fa-bolt text-yellow-400"></i>');
+        $('#mode-label').text('挑戰模式');
+        $('.hint-box').addClass('hidden');
+    } else {
+        $('#mode-icon').html('<i class="fas fa-graduation-cap text-blue-400"></i>');
+        $('#mode-label').text('教學模式');
+        $('.hint-box').removeClass('hidden');
+    }
+}
+
+$('#mode-toggle').click(function() {
+    var current = $(this).data('mode') || 'guided';
+    var next = current === 'guided' ? 'challenge' : 'guided';
+    $(this).data('mode', next);
+    $.ajax({ url: '/set-mode', method: 'POST', contentType: 'application/json',
+        data: JSON.stringify({mode: next}),
+        success: function() {
+            updateModeUI(next);
+            showToast('🔄', next === 'challenge' ? '已切換至挑戰模式（提示已隱藏）' : '已切換至教學模式');
+        }
+    });
+});
+</script>
+
+</body>
+</html>
