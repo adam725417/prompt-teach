@@ -41,6 +41,61 @@ function getScoreEmoji(score) {
 }
 
 // ============================================================
+// 配對題 狀態管理
+// ============================================================
+var matchingState = {};
+var MATCH_COLORS_LIST = ['blue', 'green', 'amber', 'purple'];
+
+function updateMatchingUI(qid) {
+    var state = matchingState[qid];
+    if (!state) return;
+
+    var pairedItems = Object.keys(state.pairs);
+    var reverseMap = {};
+    pairedItems.forEach(function(item) {
+        reverseMap[state.pairs[item]] = item;
+    });
+
+    var baseLeft = 'matching-left-item rounded-lg px-3 py-2.5 text-sm font-mono font-medium border-2 cursor-pointer select-none transition ';
+    var baseRight = 'matching-right-item rounded-lg px-3 py-2.5 text-xs border-2 cursor-pointer select-none transition ';
+
+    $('#matching-left-' + qid + ' .matching-left-item').each(function() {
+        var item = this.getAttribute('data-item');
+        var colorIdx = pairedItems.indexOf(item);
+        if (colorIdx >= 0) {
+            var c = MATCH_COLORS_LIST[colorIdx % MATCH_COLORS_LIST.length];
+            $(this).attr('class', baseLeft + 'bg-' + c + '-100 border-' + c + '-400 text-' + c + '-800');
+        } else if (state.selectedLeft === item) {
+            $(this).attr('class', baseLeft + 'bg-purple-50 border-purple-500 ring-2 ring-purple-300 text-purple-700');
+        } else {
+            $(this).attr('class', baseLeft + 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 hover:bg-purple-50');
+        }
+    });
+
+    $('#matching-right-' + qid + ' .matching-right-item').each(function() {
+        var match = this.getAttribute('data-match');
+        var pairedItem = reverseMap[match];
+        if (pairedItem) {
+            var colorIdx = pairedItems.indexOf(pairedItem);
+            var c = MATCH_COLORS_LIST[colorIdx % MATCH_COLORS_LIST.length];
+            $(this).attr('class', baseRight + 'bg-' + c + '-100 border-' + c + '-400 text-' + c + '-800');
+        } else {
+            $(this).attr('class', baseRight + 'border-gray-200 bg-gray-50 text-gray-600 hover:border-purple-300 hover:bg-purple-50');
+        }
+    });
+
+    var total = parseInt($('#matching-status-' + qid).data('total'), 10);
+    $('#matching-status-' + qid).text('已配對 ' + pairedItems.length + ' / ' + total + ' 組');
+}
+
+function unpairItem(qid, item) {
+    if (!matchingState[qid]) return;
+    delete matchingState[qid].pairs[item];
+    matchingState[qid].selectedLeft = null;
+    updateMatchingUI(qid);
+}
+
+// ============================================================
 // 通用測驗渲染器
 // ============================================================
 function renderQuiz(questions, containerId, submitBtnId, colorClass) {
@@ -81,19 +136,26 @@ function renderQuiz(questions, containerId, submitBtnId, colorClass) {
             });
             html += '</div>';
         } else if (q.type === 'matching') {
-            html += '<div class="grid grid-cols-2 gap-3 text-sm">';
-            html += '<div>';
+            matchingState[q.id] = { selectedLeft: null, pairs: {} };
+
+            html += '<div class="text-xs text-gray-400 mb-2 flex items-center gap-1"><i class="fas fa-link text-xs mr-1"></i>點擊左側欄位名稱選取，再點右側說明完成配對；再次點擊已配對項目可取消</div>';
+            html += '<div class="grid grid-cols-2 gap-3">';
+
+            html += '<div class="space-y-2" id="matching-left-' + q.id + '">';
             (q.pairs || []).forEach(function(pair) {
-                html += '<div class="bg-purple-50 rounded-lg px-3 py-2 mb-2 text-purple-700 font-mono text-xs">' + escapeHtml(pair.item) + '</div>';
+                html += '<div class="matching-left-item rounded-lg px-3 py-2.5 text-sm font-mono font-medium border-2 border-gray-200 bg-gray-50 text-gray-700 cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition select-none" data-item="' + escapeHtml(pair.item) + '" data-qid="' + q.id + '">' + escapeHtml(pair.item) + '</div>';
             });
-            html += '</div><div>';
-            var shuffledMatches = [...(q.pairs || [])].sort(() => Math.random() - 0.5);
-            shuffledMatches.forEach(function(pair) {
-                html += '<div class="bg-gray-50 rounded-lg px-3 py-2 mb-2 text-gray-600 text-xs">' + escapeHtml(pair.match) + '</div>';
+            html += '</div>';
+
+            html += '<div class="space-y-2" id="matching-right-' + q.id + '">';
+            var shuffledPairs = [...(q.pairs || [])].sort(() => Math.random() - 0.5);
+            shuffledPairs.forEach(function(pair) {
+                html += '<div class="matching-right-item rounded-lg px-3 py-2.5 text-xs border-2 border-gray-200 bg-gray-50 text-gray-600 cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition select-none" data-match="' + escapeHtml(pair.match) + '" data-qid="' + q.id + '">' + escapeHtml(pair.match) + '</div>';
             });
-            html += '</div></div>';
-            html += '<div class="mt-2 text-xs text-gray-400">（配對題：請記憶左右對應關係）</div>';
-            html += '<input type="hidden" name="q_' + q.id + '" value="all_correct" class="matching-hidden">';
+            html += '</div>';
+
+            html += '</div>';
+            html += '<div id="matching-status-' + q.id + '" class="text-xs text-gray-400 mt-2" data-total="' + (q.pairs || []).length + '">已配對 0 / ' + (q.pairs || []).length + ' 組</div>';
         }
 
         html += '</div>';
@@ -152,6 +214,49 @@ function renderQuiz(questions, containerId, submitBtnId, colorClass) {
         }
     });
 
+    // 配對題：點擊左側欄位名稱
+    $container.on('click', '.matching-left-item', function() {
+        var qid = $(this).data('qid');
+        var item = this.getAttribute('data-item');
+        var state = matchingState[qid];
+        if (!state) return;
+
+        if (state.pairs.hasOwnProperty(item)) {
+            unpairItem(qid, item);
+            return;
+        }
+        state.selectedLeft = (state.selectedLeft === item) ? null : item;
+        updateMatchingUI(qid);
+    });
+
+    // 配對題：點擊右側說明
+    $container.on('click', '.matching-right-item', function() {
+        var qid = $(this).data('qid');
+        var match = this.getAttribute('data-match');
+        var state = matchingState[qid];
+        if (!state) return;
+
+        var existingItem = null;
+        Object.keys(state.pairs).forEach(function(k) {
+            if (state.pairs[k] === match) existingItem = k;
+        });
+
+        if (!state.selectedLeft) {
+            if (existingItem) unpairItem(qid, existingItem);
+            return;
+        }
+
+        if (existingItem) delete state.pairs[existingItem];
+        state.pairs[state.selectedLeft] = match;
+        state.selectedLeft = null;
+        updateMatchingUI(qid);
+
+        var total = parseInt($('#matching-status-' + qid).data('total'), 10);
+        if (Object.keys(state.pairs).length >= total) {
+            $('#' + submitBtnId).removeClass('hidden');
+        }
+    });
+
     // 渲染完成後立即顯示提交按鈕（不需要等待互動）
     $('#' + submitBtnId).removeClass('hidden');
 }
@@ -184,7 +289,8 @@ function collectAnswers(questions, containerId) {
             });
             answer = order;
         } else if (q.type === 'matching') {
-            answer = 'all_correct';
+            var state = matchingState[q.id];
+            answer = (state && Object.keys(state.pairs).length > 0) ? $.extend({}, state.pairs) : {};
         } else {
             var $checked = $('#' + containerId + ' input[name="q_' + q.id + '"]:checked');
             if ($checked.length) {

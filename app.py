@@ -219,7 +219,7 @@ def submit_quiz():
         is_correct = check_answer(q, ans['answer'])
         score = 100 // total if is_correct else 0
 
-        answer_val = json.dumps(ans['answer'], ensure_ascii=False) if isinstance(ans['answer'], list) else ans['answer']
+        answer_val = json.dumps(ans['answer'], ensure_ascii=False) if isinstance(ans['answer'], (list, dict)) else (ans['answer'] or '')
         execute_db("""
             INSERT INTO quiz_attempts (user_id, unit, question_id, answer, is_correct, score)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -228,11 +228,16 @@ def submit_quiz():
         if is_correct:
             correct += 1
 
+        # 配對題：將正確答案格式化為可讀字串
+        correct_answer = q.get('answer')
+        if q.get('type') == 'matching':
+            correct_answer = '；'.join([f"{p['item']} → {p['match']}" for p in q.get('pairs', [])])
+
         results.append({
             'question_id': ans['question_id'],
             'is_correct': is_correct,
             'explanation': q.get('explanation', ''),
-            'correct_answer': q.get('answer')
+            'correct_answer': correct_answer
         })
 
     # 計算總分
@@ -263,7 +268,10 @@ def check_answer(question, user_answer):
             return user_answer == correct
         return False
     elif q_type == 'matching':
-        return user_answer == 'all_correct'  # 簡化處理
+        if isinstance(user_answer, dict) and user_answer:
+            correct_pairs = {p['item']: p['match'] for p in question.get('pairs', [])}
+            return user_answer == correct_pairs
+        return False
     return False
 
 @app.route('/api/role-exercise/submit', methods=['POST'])

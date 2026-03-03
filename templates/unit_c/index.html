@@ -311,14 +311,13 @@
                 <div id="mem-result-display" class="space-y-3">
                     <!-- 由 JS updateMemCalc() 渲染 -->
                 </div>
-                <div class="mt-4 bg-gray-50 rounded-xl p-3 text-xs text-gray-500 space-y-1">
-                    <p>📌 估算公式（簡化版）：</p>
-                    <p>模型權重 = 參數量 × 精度位元數 / 8</p>
-                    <p>KV Cache ≈ context × batch × 隱藏層大小 × 2 / 精度</p>
-                    <p class="text-gray-400">（實際需求因模型架構略有差異）</p>
-                </div>
             </div>
         </div>
+    </div>
+
+    <!-- VRAM 完整公式推導（全寬，動態） -->
+    <div id="vram-formula-display" class="mb-6">
+        <!-- 由 JS updateMemCalc() 渲染 -->
     </div>
 
     <!-- 常見 GPU 對應 -->

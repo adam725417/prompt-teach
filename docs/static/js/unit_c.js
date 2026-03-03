@@ -220,6 +220,18 @@ function renderSimResult(data) {
 // ============================================================
 // C-3: 記憶體估算互動器
 // ============================================================
+
+// 根據參數量推算典型 Transformer 架構（Llama 系列近似值）
+function getModelArch(paramsB) {
+    if (paramsB <= 1)  return { layers: 12, dModel: 768,   label: '1B 級' };
+    if (paramsB <= 3)  return { layers: 24, dModel: 2048,  label: '3B 級' };
+    if (paramsB <= 7)  return { layers: 32, dModel: 4096,  label: '7B 級' };
+    if (paramsB <= 13) return { layers: 40, dModel: 5120,  label: '13B 級' };
+    if (paramsB <= 30) return { layers: 60, dModel: 6656,  label: '30B 級' };
+    if (paramsB <= 70) return { layers: 80, dModel: 8192,  label: '70B 級' };
+    return              { layers: 96, dModel: 12288, label: '100B+ 級' };
+}
+
 function updateMemCalc() {
     var params = parseInt($('#model-params').val()) || 7;
     var precision = parseInt($('input[name="precision"]:checked').val()) || 16;
@@ -231,17 +243,22 @@ function updateMemCalc() {
     $('#context-display').text(contextLen >= 1024 ? Math.round(contextLen / 1024) + 'K' : contextLen);
     $('#batch-display').text(batchSize);
 
-    // 估算模型權重記憶體（GB）
     var bytesPerParam = precision / 8;  // 16bit=2bytes, 8bit=1byte, 4bit=0.5bytes
+    var arch = getModelArch(params);
+
+    // ① 模型權重：P × (bits/8)
     var modelWeightGB = params * 1e9 * bytesPerParam / 1e9;
 
-    // 估算 KV Cache（簡化公式）
-    // KV Cache ≈ 2 * context * batch * heads * head_dim * layers * bytes
-    // 簡化：約 model_size * context / 2048 * batch * 0.1
-    var kvCacheGB = params * (contextLen / 2048) * batchSize * (bytesPerParam / 2);
+    // ② KV Cache：2 × L × S × Batch × d_model × (bits/8)
+    //   2 = Key + Value 兩份快取
+    //   L = 層數（由架構查表）
+    //   S = Context 長度（tokens）
+    //   d_model = 隱藏層維度（由架構查表）
+    var kvCacheBytes = 2 * arch.layers * contextLen * batchSize * arch.dModel * bytesPerParam;
+    var kvCacheGB = kvCacheBytes / 1e9;
 
-    // 其他開銷（啟動層、梯度等，推論時較小）
-    var overheadGB = params * 0.05;
+    // ③ 系統開銷：推論時僅需 activations 等，約 5%
+    var overheadGB = modelWeightGB * 0.05;
 
     var totalGB = modelWeightGB + kvCacheGB + overheadGB;
 
@@ -301,6 +318,123 @@ function updateMemCalc() {
 
     html += '</div>';
     $result.html(html);
+
+    // 渲染公式推導區
+    renderVRAMFormula(params, precision, contextLen, batchSize, arch, modelWeightGB, kvCacheGB, overheadGB, totalGB);
+}
+
+// ============================================================
+// C-3: VRAM 公式推導渲染（隨滑桿動態更新）
+// ============================================================
+function renderVRAMFormula(params, precision, contextLen, batchSize, arch, modelWeightGB, kvCacheGB, overheadGB, totalGB) {
+    var bytesPerParam = precision / 8;
+    var contextDisplay = contextLen >= 1024 ? Math.round(contextLen / 1024) + 'K' : contextLen;
+    var precLabel = precision === 4 ? 'INT4（4-bit）' : precision === 8 ? 'INT8（8-bit）' : 'FP16（16-bit）';
+
+    // 數字格式化
+    var kvBytes = 2 * arch.layers * contextLen * batchSize * arch.dModel * bytesPerParam;
+    function fmt(n) { return Math.round(n).toLocaleString(); }
+
+    var html = '<div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">';
+
+    // 標題列
+    html += '<div class="bg-gradient-to-r from-slate-700 to-slate-900 text-white px-5 py-3 flex items-center gap-3">';
+    html += '<i class="fas fa-square-root-variable text-emerald-400"></i>';
+    html += '<div>';
+    html += '<div class="font-bold text-sm">VRAM 完整計算公式推導</div>';
+    html += '<div class="text-xs text-slate-300">根據當前滑桿設定即時代入數值</div>';
+    html += '</div>';
+    html += '<div class="ml-auto text-right text-xs text-slate-300">模型：' + params + 'B（' + arch.label + '）｜精度：' + precLabel + '</div>';
+    html += '</div>';
+
+    html += '<div class="p-5 space-y-4">';
+
+    // 總公式概覽
+    html += '<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center text-sm">';
+    html += '<span class="text-slate-500 text-xs block mb-1">VRAM 總需求 =</span>';
+    html += '<span class="font-mono font-bold text-slate-700">VRAM<sub>weight</sub></span>';
+    html += '<span class="text-slate-400 mx-2">+</span>';
+    html += '<span class="font-mono font-bold text-purple-700">VRAM<sub>KV&nbsp;Cache</sub></span>';
+    html += '<span class="text-slate-400 mx-2">+</span>';
+    html += '<span class="font-mono font-bold text-gray-600">VRAM<sub>sys</sub></span>';
+    html += '<span class="text-slate-400 mx-2">=</span>';
+    html += '<span class="font-mono font-black text-emerald-600 text-base">' + totalGB.toFixed(1) + ' GB</span>';
+    html += '</div>';
+
+    html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">';
+
+    // ① 模型權重
+    html += '<div class="rounded-xl border-2 border-blue-200 overflow-hidden">';
+    html += '<div class="bg-blue-600 text-white px-3 py-2 text-xs font-bold flex items-center gap-2"><i class="fas fa-weight-hanging"></i>① 模型權重（Model Weights）</div>';
+    html += '<div class="p-3 space-y-2 bg-blue-50 text-xs font-mono">';
+    html += '<div class="text-gray-500 pb-1 border-b border-blue-100">公式：P × (bits ÷ 8)</div>';
+    html += '<div class="text-blue-800">= ' + params + ' × 10⁹ 個參數</div>';
+    html += '<div class="text-blue-800">　× (' + precision + ' bits ÷ 8) = <span class="font-bold">' + bytesPerParam + ' bytes/param</span></div>';
+    html += '<div class="text-blue-800">= ' + fmt(params * bytesPerParam * 1e9) + ' bytes</div>';
+    html += '<div class="mt-2 bg-blue-100 rounded-lg px-3 py-2 text-center font-black text-blue-700 text-sm">= ' + modelWeightGB.toFixed(1) + ' GB</div>';
+    html += '<div class="text-gray-400 text-xs mt-1">✦ 精度越低，此項越小</div>';
+    html += '</div></div>';
+
+    // ② KV Cache
+    html += '<div class="rounded-xl border-2 border-purple-200 overflow-hidden">';
+    html += '<div class="bg-purple-600 text-white px-3 py-2 text-xs font-bold flex items-center gap-2"><i class="fas fa-database"></i>② KV Cache（常被低估！）</div>';
+    html += '<div class="p-3 space-y-2 bg-purple-50 text-xs font-mono">';
+    html += '<div class="text-gray-500 pb-1 border-b border-purple-100">公式：2 × L × S × B × d_model × (bits÷8)</div>';
+    html += '<div class="text-purple-800 space-y-0.5">';
+    html += '<div>　2　= Key + Value（固定）</div>';
+    html += '<div>　L　= <span class="bg-purple-200 px-1 rounded">' + arch.layers + '</span> 層　<span class="text-gray-400">（' + params + 'B 架構）</span></div>';
+    html += '<div>　S　= <span class="bg-purple-200 px-1 rounded">' + contextDisplay + '</span> tokens　<span class="text-gray-400">（Context）</span></div>';
+    html += '<div>　B　= <span class="bg-purple-200 px-1 rounded">' + batchSize + '</span>　<span class="text-gray-400">（Batch Size）</span></div>';
+    html += '<div>d_model = <span class="bg-purple-200 px-1 rounded">' + arch.dModel.toLocaleString() + '</span>　<span class="text-gray-400">（隱藏維度）</span></div>';
+    html += '<div>　bits = ' + precision + ' → ' + bytesPerParam + ' bytes</div>';
+    html += '</div>';
+    html += '<div class="text-purple-700 mt-1">= 2 × ' + arch.layers + ' × ' + contextLen + ' × ' + batchSize + ' × ' + arch.dModel + ' × ' + bytesPerParam + '</div>';
+    html += '<div class="text-purple-700">= ' + fmt(kvBytes) + ' bytes</div>';
+    html += '<div class="mt-2 bg-purple-100 rounded-lg px-3 py-2 text-center font-black text-purple-700 text-sm">= ' + kvCacheGB.toFixed(2) + ' GB</div>';
+    html += '<div class="text-gray-400 text-xs mt-1">✦ Context 長、Batch 大，此項快速增長</div>';
+    html += '</div></div>';
+
+    // ③ 系統開銷
+    html += '<div class="rounded-xl border-2 border-gray-200 overflow-hidden">';
+    html += '<div class="bg-gray-600 text-white px-3 py-2 text-xs font-bold flex items-center gap-2"><i class="fas fa-gears"></i>③ 系統開銷（Sys Overhead）</div>';
+    html += '<div class="p-3 space-y-2 bg-gray-50 text-xs font-mono">';
+    html += '<div class="text-gray-500 pb-1 border-b border-gray-200">公式：VRAM_weight × 5%</div>';
+    html += '<div class="text-gray-700 space-y-0.5">';
+    html += '<div>包含：Activations</div>';
+    html += '<div>　　　Runtime 緩衝區</div>';
+    html += '<div>　　　CUDA 核心快取</div>';
+    html += '</div>';
+    html += '<div class="text-gray-700 mt-1">= ' + modelWeightGB.toFixed(1) + ' GB × 5%</div>';
+    html += '<div class="mt-2 bg-gray-100 rounded-lg px-3 py-2 text-center font-black text-gray-700 text-sm">= ' + overheadGB.toFixed(2) + ' GB</div>';
+    html += '<div class="text-gray-400 text-xs mt-1">✦ 訓練時此項更大（含梯度 ×3）</div>';
+    html += '</div></div>';
+
+    html += '</div>'; // grid end
+
+    // 合計列
+    html += '<div class="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4">';
+    html += '<div class="flex items-center gap-3 flex-wrap">';
+    html += '<div class="text-xs text-gray-500 font-mono">合計：</div>';
+    html += '<div class="font-mono text-sm text-blue-600">' + modelWeightGB.toFixed(1) + ' GB</div>';
+    html += '<div class="text-gray-400">+</div>';
+    html += '<div class="font-mono text-sm text-purple-600">' + kvCacheGB.toFixed(2) + ' GB</div>';
+    html += '<div class="text-gray-400">+</div>';
+    html += '<div class="font-mono text-sm text-gray-600">' + overheadGB.toFixed(2) + ' GB</div>';
+    html += '<div class="text-gray-400">=</div>';
+    html += '<div class="font-mono font-black text-2xl text-emerald-700">' + totalGB.toFixed(1) + ' GB</div>';
+    html += '<div class="ml-auto text-xs text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">';
+    html += '推薦 GPU：' + (totalGB <= 8 ? 'RTX 3060 12G' : totalGB <= 20 ? 'RTX 3090 24G' : totalGB <= 38 ? 'A40 40G' : totalGB <= 78 ? 'A100 80G' : '多卡並聯 >80G') + '</div>';
+    html += '</div>';
+    // 公式說明提示
+    html += '<div class="mt-3 text-xs text-gray-400 border-t border-emerald-200 pt-2">';
+    html += '⚠️ 架構參數（層數 L=' + arch.layers + '、d_model=' + arch.dModel + '）為 ' + arch.label + ' 模型的典型近似值，實際依各模型設計略有不同。';
+    html += '量化後 KV Cache 精度仍可選 FP16，不一定跟模型精度相同（視推理框架設定）。';
+    html += '</div>';
+    html += '</div>'; // 合計列 end
+
+    html += '</div></div>'; // p-5 + outer div
+
+    $('#vram-formula-display').html(html);
 }
 
 function renderGPUCards() {
